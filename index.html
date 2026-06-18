@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>떨어지는 별 받기</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-wrap">
+    <h1>떨어지는 별 받기</h1>
+
+    <div class="info">
+      <span>점수: <strong id="score">0</strong></span>
+      <span>목숨: <strong id="life">3</strong></span>
+      <span>목표: 100점</span>
+    </div>
+
+    <div id="gameArea">
+      <div id="player">🧺</div>
+    </div>
+
+    <p class="guide">← → 방향키로 바구니를 움직여 별을 받으세요!</p>
+
+    <button id="restartBtn">다시 시작</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
