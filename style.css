@@ -850,6 +850,15 @@ body {
     5px 5px 0 #000;
 }
 
+.difficulty-btn.locked,
+.difficulty-btn:disabled {
+  background: #262b3f;
+  color: #6f7b9a;
+  cursor: not-allowed;
+  opacity: 0.82;
+  box-shadow: 3px 3px 0 #000;
+}
+
 #startBtn {
   display: inline-block;
 }
@@ -860,7 +869,7 @@ body {
 
 #startBtn:hover,
 #restartBtn:hover,
-.difficulty-btn:hover {
+.difficulty-btn:not(:disabled):hover {
   background: #6ddcff;
   transform: translate(2px, 2px);
   box-shadow: 3px 3px 0 #000;
@@ -868,7 +877,7 @@ body {
 
 #startBtn:active,
 #restartBtn:active,
-.difficulty-btn:active {
+.difficulty-btn:not(:disabled):active {
   transform: translate(5px, 5px);
   box-shadow: none;
 }

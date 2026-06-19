@@ -22,7 +22,7 @@ let playerSpeed = 10;
 let gameRunning = false;
 let timeLeft = 30;
 let gameStartTime = 0;
-let currentDifficultyLevel = 2;
+let currentDifficultyLevel = 1;
 let soundEnabled = true;
 
 let leftPressed = false;
@@ -90,6 +90,69 @@ const difficultySettings = {
     maxSpeedScale: 2.6
   }
 };
+
+const difficultyUnlockOrder = ["1", "2", "3", "infinite"];
+const UNLOCK_STORAGE_KEY = "starCloudMaxUnlockedStageIndex";
+let maxUnlockedStageIndex = loadMaxUnlockedStageIndex();
+
+function loadMaxUnlockedStageIndex() {
+  try {
+    const savedValue = Number(localStorage.getItem(UNLOCK_STORAGE_KEY));
+
+    if (Number.isInteger(savedValue) && savedValue >= 0 && savedValue < difficultyUnlockOrder.length) {
+      return savedValue;
+    }
+  } catch (error) {
+    console.warn("해금 진행도를 불러올 수 없습니다.", error);
+  }
+
+  return 0;
+}
+
+function saveMaxUnlockedStageIndex() {
+  try {
+    localStorage.setItem(UNLOCK_STORAGE_KEY, String(maxUnlockedStageIndex));
+  } catch (error) {
+    console.warn("해금 진행도를 저장할 수 없습니다.", error);
+  }
+}
+
+function getDifficultyUnlockIndex(level) {
+  return difficultyUnlockOrder.indexOf(String(level));
+}
+
+function isDifficultyUnlocked(level) {
+  const unlockIndex = getDifficultyUnlockIndex(level);
+
+  return unlockIndex >= 0 && unlockIndex <= maxUnlockedStageIndex;
+}
+
+function unlockNextDifficulty(clearedLevel) {
+  const clearedIndex = getDifficultyUnlockIndex(clearedLevel);
+  const nextIndex = clearedIndex + 1;
+
+  if (clearedIndex < 0 || nextIndex >= difficultyUnlockOrder.length) {
+    return null;
+  }
+
+  if (nextIndex > maxUnlockedStageIndex) {
+    maxUnlockedStageIndex = nextIndex;
+    saveMaxUnlockedStageIndex();
+    updateDifficultyDisplay();
+
+    return difficultySettings[difficultyUnlockOrder[nextIndex]];
+  }
+
+  return null;
+}
+
+function addUnlockMessage(message, unlockedDifficulty) {
+  if (!unlockedDifficulty) {
+    return message;
+  }
+
+  return `${message} ${unlockedDifficulty.label}가 해금되었습니다!`;
+}
 
 function getCurrentDifficulty() {
   return difficultySettings[String(currentDifficultyLevel)] || difficultySettings[2];
@@ -177,20 +240,31 @@ function updateDifficultyDisplay() {
     if (difficulty.isInfinite) {
       clearNote.textContent = "무한모드: 목표 점수 없이 계속 플레이! 시간이 지날수록 속도와 등장 빈도가 증가합니다!";
     } else {
-      clearNote.textContent = `${difficulty.label}: ${difficulty.timeLimit}초 안에 ${difficulty.winScore}점 이상을 넘기면 CLEAR!`;
+      const nextDifficulty = difficultySettings[difficultyUnlockOrder[getDifficultyUnlockIndex(difficulty.key) + 1]];
+      const unlockText = nextDifficulty ? ` 클리어하면 ${nextDifficulty.label} 해금!` : "";
+      clearNote.textContent = `${difficulty.label}: ${difficulty.timeLimit}초 안에 ${difficulty.winScore}점 이상을 넘기면 CLEAR!${unlockText}`;
     }
   }
 
   difficultyButtons.forEach(button => {
-    const isActive = String(button.dataset.level) === String(difficulty.key);
+    const levelKey = String(button.dataset.level);
+    const buttonDifficulty = difficultySettings[levelKey];
+    const isActive = levelKey === String(difficulty.key);
+    const isUnlocked = isDifficultyUnlocked(levelKey);
+
     button.classList.toggle("active", isActive);
+    button.classList.toggle("locked", !isUnlocked);
+    button.disabled = !isUnlocked;
+    button.setAttribute("aria-disabled", String(!isUnlocked));
+    button.title = isUnlocked ? `${buttonDifficulty.label} 선택 가능` : "이전 단계를 먼저 클리어해야 합니다";
+    button.textContent = isUnlocked ? buttonDifficulty.label : `${buttonDifficulty.label} 🔒`;
   });
 }
 
 function selectDifficulty(level) {
   const nextLevel = String(level);
 
-  if (!difficultySettings[nextLevel]) return;
+  if (!difficultySettings[nextLevel] || !isDifficultyUnlocked(nextLevel)) return;
 
   currentDifficultyLevel = nextLevel;
   gameRunning = false;
@@ -1055,6 +1129,13 @@ function hideResultPopup() {
 }
 
 function endGame(resultType, message, delay = 100) {
+  const clearedLevel = String(currentDifficultyLevel);
+
+  if (resultType === "clear" && !isInfiniteMode()) {
+    const unlockedDifficulty = unlockNextDifficulty(clearedLevel);
+    message = addUnlockMessage(message, unlockedDifficulty);
+  }
+
   gameRunning = false;
 
   clearGameTimers();
@@ -1075,7 +1156,7 @@ function endGame(resultType, message, delay = 100) {
 }
 
 function startGame() {
-  if (gameRunning) return;
+  if (gameRunning || !isDifficultyUnlocked(currentDifficultyLevel)) return;
 
   gameRunning = true;
   timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
