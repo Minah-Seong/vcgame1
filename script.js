@@ -1,6 +1,8 @@
 const gameArea = document.getElementById("gameArea");
 const player = document.getElementById("player");
 const scoreText = document.getElementById("score");
+const timerText = document.getElementById("timer");
+const goalText = document.getElementById("goal");
 const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
@@ -14,6 +16,8 @@ let life = 3;
 let playerX = 0;
 let playerSpeed = 10;
 let gameRunning = false;
+let timeLeft = 60;
+let gameStartTime = 0;
 
 let leftPressed = false;
 let rightPressed = false;
@@ -26,6 +30,8 @@ const playerBottom = 49;
 const itemSize = 44;
 const yellowStarBaseSpeedMin = 3.6;
 const yellowStarBaseSpeedRange = 2.2;
+const GAME_TIME_LIMIT = 60;
+const WIN_SCORE = 200;
 
 function getGameWidth() {
   return gameArea.clientWidth;
@@ -145,7 +151,7 @@ const itemTypes = [
     scoreValue: 10,
     chance: 40,
     speedMultiplier: 1,
-    loseLifeOnGround: true,
+    loseLifeOnGround: false,
     burstType: "yellow",
     isObstacle: false
   },
@@ -158,7 +164,7 @@ const itemTypes = [
     scoreValue: 20,
     chance: 20,
     speedMultiplier: 1.875,
-    loseLifeOnGround: true,
+    loseLifeOnGround: false,
     burstType: "red",
     isObstacle: false
   },
@@ -171,7 +177,7 @@ const itemTypes = [
     scoreValue: 50,
     chance: 10,
     speedMultiplier: 2.325,
-    loseLifeOnGround: true,
+    loseLifeOnGround: false,
     burstType: "rainbow",
     isObstacle: false
   },
@@ -181,7 +187,7 @@ const itemTypes = [
     map: meteorMap,
     artClass: "meteor-art",
     palette: colors,
-    scoreValue: -30,
+    scoreValue: -50,
     chance: 30,
     speedMultiplier: 1,
     loseLifeOnGround: false,
@@ -608,6 +614,8 @@ function catchItem(item, index) {
   createBurstEffect(item.x + itemSize / 2, item.y + itemSize / 2, item.burstType);
 
   if (item.isObstacle) {
+    life--;
+    updateLife();
     playMeteorCatchSound();
   } else {
     playCatchSound();
@@ -615,8 +623,13 @@ function catchItem(item, index) {
 
   removeItemAt(index);
 
-  if (score >= 100) {
-    endGame("clear", "별 100점을 모았습니다!");
+  if (life <= 0) {
+    endGame("game-over", "운석에 맞아 목숨을 모두 잃었습니다.", 180);
+    return;
+  }
+
+  if (score >= WIN_SCORE) {
+    endGame("clear", `${WIN_SCORE}점 이상을 달성했습니다!`);
   }
 }
 
@@ -625,20 +638,45 @@ function hitGround(item, index, groundTop) {
   playBurstSound();
 
   removeItemAt(index);
+}
 
-  if (!item.loseLifeOnGround) {
-    return;
+function updateTimerDisplay() {
+  if (timerText) {
+    timerText.textContent = timeLeft;
+  }
+}
+
+function updateGoalDisplay() {
+  if (goalText) {
+    goalText.textContent = WIN_SCORE;
+  }
+}
+
+function updateGameTimer() {
+  if (!gameRunning) return;
+
+  const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+  const nextTimeLeft = Math.max(0, GAME_TIME_LIMIT - elapsedSeconds);
+
+  if (nextTimeLeft !== timeLeft) {
+    timeLeft = nextTimeLeft;
+    updateTimerDisplay();
   }
 
-  life--;
-  updateLife();
-
-  if (life <= 0) {
-    endGame("game-over", "목숨을 모두 잃었습니다.", 560);
+  if (timeLeft <= 0) {
+    if (score >= WIN_SCORE) {
+      endGame("clear", `${WIN_SCORE}점 이상을 달성했습니다!`);
+    } else {
+      endGame("game-over", `시간 종료! ${WIN_SCORE}점 이상을 넘지 못했습니다.`);
+    }
   }
 }
 
 function gameLoop() {
+  if (!gameRunning) return;
+
+  updateGameTimer();
+
   if (!gameRunning) return;
 
   movePlayer();
@@ -664,8 +702,12 @@ function gameLoop() {
 
     if (isHit) {
       catchItem(item, i);
+
+      if (!gameRunning) return;
     } else if (isGroundHit) {
       hitGround(item, i, groundTop);
+
+      if (!gameRunning) return;
     }
   }
 }
@@ -708,12 +750,16 @@ function clearGameTimers() {
 function resetGameState() {
   score = 0;
   life = 3;
+  timeLeft = GAME_TIME_LIMIT;
+  gameStartTime = 0;
   playerX = getCenteredPlayerX();
 
   leftPressed = false;
   rightPressed = false;
 
   scoreText.textContent = score;
+  updateTimerDisplay();
+  updateGoalDisplay();
   updateLife();
   hideResultPopup();
 
@@ -770,6 +816,10 @@ function startGame() {
   if (gameRunning) return;
 
   gameRunning = true;
+  timeLeft = GAME_TIME_LIMIT;
+  gameStartTime = Date.now();
+  updateTimerDisplay();
+  updateGoalDisplay();
 
   startBtn.style.display = "none";
   restartBtn.style.display = "none";

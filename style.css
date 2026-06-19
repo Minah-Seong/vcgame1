@@ -83,14 +83,22 @@ body {
   z-index: 30;
   text-align: left;
   color: #ffffff;
-  font-size: 25px;
+  font-size: 22px;
   font-weight: bold;
-  line-height: 1.45;
+  line-height: 1.35;
   text-shadow:
     3px 0 0 #000,
     -3px 0 0 #000,
     0 3px 0 #000,
     0 -3px 0 #000;
+}
+
+#timer {
+  color: #8ee9ff;
+}
+
+#goal {
+  color: #fff36a;
 }
 
 #life {
