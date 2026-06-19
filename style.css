@@ -106,11 +106,47 @@ body {
   letter-spacing: 2px;
 }
 
+/* 사운드 ON/OFF 버튼 */
+.sound-toggle-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 35;
+  padding: 7px 10px;
+  background: #6ddcff;
+  color: #0a0d16;
+  border: 4px solid #0a0d16;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.sound-toggle-btn.muted {
+  background: #101833;
+  color: #ff4d5d;
+  box-shadow:
+    0 0 0 3px #ff4d5d,
+    4px 4px 0 #000;
+}
+
+.sound-toggle-btn:hover {
+  background: #ffcf32;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.sound-toggle-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
 /* 달 */
 .moon {
   position: absolute;
   top: 42px;
-  right: 68px;
+  right: 136px;
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -855,6 +891,13 @@ body {
 
   .hud {
     font-size: 20px;
+  }
+
+  .sound-toggle-btn {
+    top: 10px;
+    right: 10px;
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   .control-panel {

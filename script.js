@@ -6,6 +6,7 @@ const goalText = document.getElementById("goal");
 const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
+const soundToggleBtn = document.getElementById("soundToggleBtn");
 const difficultyText = document.getElementById("difficulty");
 const clearNote = document.getElementById("clearNote");
 const difficultyButtons = document.querySelectorAll(".difficulty-btn");
@@ -22,6 +23,7 @@ let gameRunning = false;
 let timeLeft = 30;
 let gameStartTime = 0;
 let currentDifficultyLevel = 2;
+let soundEnabled = true;
 
 let leftPressed = false;
 let rightPressed = false;
@@ -304,6 +306,7 @@ let sfxGain = null;
 let bgmTimer = null;
 let bgmStep = 0;
 
+const MASTER_VOLUME = 0.22;
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
 const bgmMelody = [
@@ -326,6 +329,9 @@ window.addEventListener("resize", resizeGameHandler);
 
 startBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", restartGame);
+if (soundToggleBtn) {
+  soundToggleBtn.addEventListener("click", toggleSound);
+}
 difficultyButtons.forEach(button => {
   button.addEventListener("click", () => {
     selectDifficulty(Number(button.dataset.level));
@@ -333,7 +339,44 @@ difficultyButtons.forEach(button => {
 });
 
 createPixelArt(player, cloudMap, "cloud-art");
+updateSoundButton();
 resetGameState();
+
+function updateSoundButton() {
+  if (!soundToggleBtn) return;
+
+  soundToggleBtn.textContent = soundEnabled ? "SOUND ON" : "SOUND OFF";
+  soundToggleBtn.setAttribute("aria-pressed", String(soundEnabled));
+  soundToggleBtn.classList.toggle("muted", !soundEnabled);
+}
+
+function applySoundState() {
+  updateSoundButton();
+
+  if (masterGain) {
+    masterGain.gain.value = soundEnabled ? MASTER_VOLUME : 0;
+  }
+
+  if (!soundEnabled) {
+    stopBgm();
+    return;
+  }
+
+  if (gameRunning) {
+    resumeAudio()
+      .then(() => {
+        startBgm();
+      })
+      .catch(error => {
+        console.warn("오디오를 다시 시작할 수 없습니다.", error);
+      });
+  }
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  applySoundState();
+}
 
 function initializeAudio() {
   if (audioContext || !AudioContextClass) return;
@@ -344,7 +387,7 @@ function initializeAudio() {
   bgmGain = audioContext.createGain();
   sfxGain = audioContext.createGain();
 
-  masterGain.gain.value = 0.22;
+  masterGain.gain.value = soundEnabled ? MASTER_VOLUME : 0;
   bgmGain.gain.value = 0.36;
   sfxGain.gain.value = 0.7;
 
@@ -368,7 +411,7 @@ function resumeAudio() {
 }
 
 function playTone(frequency, startTime, duration, type, volume, destinationGain) {
-  if (!audioContext || !destinationGain) return;
+  if (!soundEnabled || !audioContext || !destinationGain) return;
 
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
@@ -388,7 +431,7 @@ function playTone(frequency, startTime, duration, type, volume, destinationGain)
 }
 
 function playNoise(startTime, duration, volume, destinationGain) {
-  if (!audioContext || !destinationGain) return;
+  if (!soundEnabled || !audioContext || !destinationGain) return;
 
   const bufferSize = Math.floor(audioContext.sampleRate * duration);
   const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
@@ -420,7 +463,7 @@ function playNoise(startTime, duration, volume, destinationGain) {
 }
 
 function playBgmTick() {
-  if (!audioContext || !bgmGain || !gameRunning) return;
+  if (!soundEnabled || !audioContext || !bgmGain || !gameRunning) return;
 
   const now = audioContext.currentTime;
 
@@ -440,7 +483,7 @@ function playBgmTick() {
 }
 
 function startBgm() {
-  if (!audioContext || !bgmGain) return;
+  if (!soundEnabled || !audioContext || !bgmGain) return;
 
   stopBgm();
 
@@ -458,7 +501,7 @@ function stopBgm() {
 }
 
 function playCatchSound() {
-  if (!audioContext || !sfxGain) return;
+  if (!soundEnabled || !audioContext || !sfxGain) return;
 
   const now = audioContext.currentTime;
 
@@ -469,7 +512,7 @@ function playCatchSound() {
 }
 
 function playMeteorCatchSound() {
-  if (!audioContext || !sfxGain) return;
+  if (!soundEnabled || !audioContext || !sfxGain) return;
 
   const now = audioContext.currentTime;
 
@@ -480,7 +523,7 @@ function playMeteorCatchSound() {
 }
 
 function playBurstSound() {
-  if (!audioContext || !sfxGain) return;
+  if (!soundEnabled || !audioContext || !sfxGain) return;
 
   const now = audioContext.currentTime;
 
@@ -933,13 +976,17 @@ function startGame() {
 
   clearGameTimers();
 
-  resumeAudio()
-    .then(() => {
-      startBgm();
-    })
-    .catch(error => {
-      console.warn("오디오를 시작할 수 없습니다.", error);
-    });
+  if (soundEnabled) {
+    resumeAudio()
+      .then(() => {
+        startBgm();
+      })
+      .catch(error => {
+        console.warn("오디오를 시작할 수 없습니다.", error);
+      });
+  } else {
+    stopBgm();
+  }
 
   createItemWave();
 
