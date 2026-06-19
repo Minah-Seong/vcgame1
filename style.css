@@ -410,7 +410,7 @@ body {
 /* 안내 문구 */
 .guide {
   display: inline-block;
-  margin: 14px 0 10px;
+  margin: 14px 0 6px;
   padding: 8px 12px;
   background: #0a0d16;
   color: #fff36a;
@@ -420,9 +420,17 @@ body {
   box-shadow: 4px 4px 0 #000;
 }
 
-/* 재시작 버튼 */
+.sound-note {
+  margin: 0 0 10px;
+  color: #8ee9ff;
+  font-size: 11px;
+  font-weight: bold;
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* 시작 / 재시작 버튼 */
+#startBtn,
 #restartBtn {
-  display: none;
   padding: 12px 28px;
   background: #ffcf32;
   color: #0a0d16;
@@ -434,12 +442,22 @@ body {
   box-shadow: 5px 5px 0 #000;
 }
 
+#startBtn {
+  display: inline-block;
+}
+
+#restartBtn {
+  display: none;
+}
+
+#startBtn:hover,
 #restartBtn:hover {
   background: #6ddcff;
   transform: translate(2px, 2px);
   box-shadow: 3px 3px 0 #000;
 }
 
+#startBtn:active,
 #restartBtn:active {
   transform: translate(5px, 5px);
   box-shadow: none;

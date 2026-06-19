@@ -2,13 +2,14 @@ const gameArea = document.getElementById("gameArea");
 const player = document.getElementById("player");
 const scoreText = document.getElementById("score");
 const lifeText = document.getElementById("life");
+const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 
 let score = 0;
 let life = 3;
 let playerX = 147;
 let playerSpeed = 7;
-let gameRunning = true;
+let gameRunning = false;
 
 let leftPressed = false;
 let rightPressed = false;
@@ -71,11 +72,178 @@ const cloudMap = [
   "TTTTBBBBBBBBBBTTTT"
 ];
 
+/* =========================
+   8비트 BGM / 효과음 설정
+   ========================= */
+
+let audioContext = null;
+let masterGain = null;
+let bgmGain = null;
+let sfxGain = null;
+let bgmTimer = null;
+let bgmStep = 0;
+
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+const bgmMelody = [
+  659.25, 783.99, 987.77, 1174.66,
+  987.77, 783.99, 659.25, 523.25,
+  587.33, 698.46, 880.00, 1046.50,
+  880.00, 698.46, 587.33, 523.25
+];
+
+const bgmBass = [
+  130.81,
+  164.81,
+  196.00,
+  220.00
+];
+
 document.addEventListener("keydown", keyDownHandler);
 document.addEventListener("keyup", keyUpHandler);
+
+startBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", restartGame);
 
 createPixelArt(player, cloudMap, "cloud-art");
+resetGameState();
+
+function initializeAudio() {
+  if (audioContext || !AudioContextClass) return;
+
+  audioContext = new AudioContextClass();
+
+  masterGain = audioContext.createGain();
+  bgmGain = audioContext.createGain();
+  sfxGain = audioContext.createGain();
+
+  masterGain.gain.value = 0.22;
+  bgmGain.gain.value = 0.36;
+  sfxGain.gain.value = 0.7;
+
+  bgmGain.connect(masterGain);
+  sfxGain.connect(masterGain);
+  masterGain.connect(audioContext.destination);
+}
+
+function resumeAudio() {
+  initializeAudio();
+
+  if (!audioContext) {
+    return Promise.resolve();
+  }
+
+  if (audioContext.state === "suspended") {
+    return audioContext.resume();
+  }
+
+  return Promise.resolve();
+}
+
+function playTone(frequency, startTime, duration, type, volume, destinationGain) {
+  if (!audioContext || !destinationGain) return;
+
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+
+  gainNode.gain.setValueAtTime(0.0001, startTime);
+  gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  oscillator.connect(gainNode);
+  gainNode.connect(destinationGain);
+
+  oscillator.start(startTime);
+  oscillator.stop(startTime + duration + 0.03);
+}
+
+function playNoise(startTime, duration, volume, destinationGain) {
+  if (!audioContext || !destinationGain) return;
+
+  const bufferSize = Math.floor(audioContext.sampleRate * duration);
+  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < bufferSize; i++) {
+    const fade = 1 - i / bufferSize;
+    data[i] = (Math.random() * 2 - 1) * fade;
+  }
+
+  const source = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  const gainNode = audioContext.createGain();
+
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(1800, startTime);
+
+  gainNode.gain.setValueAtTime(volume, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  source.buffer = buffer;
+
+  source.connect(filter);
+  filter.connect(gainNode);
+  gainNode.connect(destinationGain);
+
+  source.start(startTime);
+  source.stop(startTime + duration);
+}
+
+function playBgmTick() {
+  if (!audioContext || !bgmGain || !gameRunning) return;
+
+  const now = audioContext.currentTime;
+
+  const melodyFrequency = bgmMelody[bgmStep % bgmMelody.length];
+  playTone(melodyFrequency, now, 0.09, "square", 0.16, bgmGain);
+
+  if (bgmStep % 4 === 0) {
+    const bassIndex = Math.floor(bgmStep / 4) % bgmBass.length;
+    playTone(bgmBass[bassIndex], now, 0.16, "triangle", 0.1, bgmGain);
+  }
+
+  if (bgmStep % 2 === 0) {
+    playNoise(now, 0.025, 0.025, bgmGain);
+  }
+
+  bgmStep++;
+}
+
+function startBgm() {
+  if (!audioContext || !bgmGain) return;
+
+  stopBgm();
+
+  bgmStep = 0;
+  playBgmTick();
+
+  bgmTimer = setInterval(playBgmTick, 150);
+}
+
+function stopBgm() {
+  if (bgmTimer) {
+    clearInterval(bgmTimer);
+    bgmTimer = null;
+  }
+}
+
+function playCatchSound() {
+  if (!audioContext || !sfxGain) return;
+
+  const now = audioContext.currentTime;
+
+  playTone(987.77, now, 0.055, "square", 0.32, sfxGain);
+  playTone(1318.51, now + 0.045, 0.065, "square", 0.26, sfxGain);
+  playTone(1760.00, now + 0.1, 0.09, "triangle", 0.2, sfxGain);
+  playNoise(now, 0.045, 0.06, sfxGain);
+}
+
+/* =========================
+   픽셀아트 생성
+   ========================= */
 
 function createPixelArt(target, map, className) {
   target.innerHTML = "";
@@ -112,25 +280,37 @@ function createPixelArtElement(map, className) {
   return art;
 }
 
+/* =========================
+   입력 처리
+   ========================= */
+
 function keyDownHandler(event) {
   if (event.key === "ArrowLeft") {
+    event.preventDefault();
     leftPressed = true;
   }
 
   if (event.key === "ArrowRight") {
+    event.preventDefault();
     rightPressed = true;
   }
 }
 
 function keyUpHandler(event) {
   if (event.key === "ArrowLeft") {
+    event.preventDefault();
     leftPressed = false;
   }
 
   if (event.key === "ArrowRight") {
+    event.preventDefault();
     rightPressed = false;
   }
 }
+
+/* =========================
+   게임 로직
+   ========================= */
 
 function movePlayer() {
   if (!gameRunning) return;
@@ -205,6 +385,8 @@ function gameLoop() {
       score += 10;
       scoreText.textContent = score;
 
+      playCatchSound();
+
       gameArea.removeChild(item.element);
       items.splice(i, 1);
 
@@ -235,10 +417,45 @@ function updateLife() {
   lifeText.textContent = lifeDisplay;
 }
 
+function clearGameTimers() {
+  if (itemCreateTimer) {
+    clearInterval(itemCreateTimer);
+    itemCreateTimer = null;
+  }
+
+  if (gameLoopTimer) {
+    clearInterval(gameLoopTimer);
+    gameLoopTimer = null;
+  }
+}
+
+function resetGameState() {
+  score = 0;
+  life = 3;
+  playerX = 147;
+
+  leftPressed = false;
+  rightPressed = false;
+
+  scoreText.textContent = score;
+  updateLife();
+
+  player.style.left = playerX + "px";
+
+  items.forEach(item => {
+    if (item.element.parentNode) {
+      gameArea.removeChild(item.element);
+    }
+  });
+
+  items = [];
+}
+
 function endGame(message) {
   gameRunning = false;
-  clearInterval(itemCreateTimer);
-  clearInterval(gameLoopTimer);
+
+  clearGameTimers();
+  stopBgm();
 
   leftPressed = false;
   rightPressed = false;
@@ -249,35 +466,35 @@ function endGame(message) {
   }, 100);
 }
 
-function restartGame() {
-  score = 0;
-  life = 3;
-  playerX = 147;
+function startGame() {
+  if (gameRunning) return;
+
   gameRunning = true;
 
-  leftPressed = false;
-  rightPressed = false;
-
-  scoreText.textContent = score;
-  updateLife();
-
-  player.style.left = playerX + "px";
+  startBtn.style.display = "none";
   restartBtn.style.display = "none";
 
-  items.forEach(item => {
-    if (item.element.parentNode) {
-      gameArea.removeChild(item.element);
-    }
-  });
+  clearGameTimers();
 
-  items = [];
+  resumeAudio()
+    .then(() => {
+      startBgm();
+    })
+    .catch(error => {
+      console.warn("오디오를 시작할 수 없습니다.", error);
+    });
 
-  startGame();
-}
+  createItem();
 
-function startGame() {
   itemCreateTimer = setInterval(createItem, 900);
   gameLoopTimer = setInterval(gameLoop, 20);
 }
 
-startGame();
+function restartGame() {
+  gameRunning = false;
+
+  clearGameTimers();
+  stopBgm();
+  resetGameState();
+  startGame();
+}
