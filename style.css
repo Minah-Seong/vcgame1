@@ -5,81 +5,442 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #ffe6f4, #fff7fb);
-  font-family: Arial, sans-serif;
+  font-family: "Courier New", monospace;
+  background: #20263a;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
 .game-wrap {
-  width: 420px;
+  width: 460px;
+  padding: 14px;
+  background: #32394f;
+  border: 6px solid #111827;
+  box-shadow:
+    8px 8px 0 #151827,
+    14px 14px 0 #0a0d16;
   text-align: center;
 }
 
-h1 {
-  color: #ff5db8;
-  margin-bottom: 12px;
-}
-
-.info {
-  display: flex;
-  justify-content: space-between;
+.game-header {
   margin-bottom: 12px;
   padding: 10px;
-  background: #ffffff;
-  border: 2px solid #ff9ed2;
-  border-radius: 12px;
-  font-size: 14px;
+  background: #101833;
+  border: 5px solid #0a0d16;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.game-header h1 {
+  margin: 0;
+  color: #fff7b5;
+  font-size: 30px;
+  letter-spacing: 2px;
+  text-shadow:
+    3px 0 0 #000,
+    -3px 0 0 #000,
+    0 3px 0 #000,
+    0 -3px 0 #000,
+    4px 4px 0 #3553b8;
+}
+
+.game-header p {
+  margin: 6px 0 0;
+  color: #8ee9ff;
+  font-size: 13px;
+  font-weight: bold;
 }
 
 #gameArea {
   position: relative;
   width: 420px;
-  height: 600px;
-  background: #222;
-  border: 4px solid #ff75c8;
-  border-radius: 18px;
+  height: 560px;
+  margin: 0 auto;
   overflow: hidden;
+  border: 6px solid #0a0d16;
+  background:
+    linear-gradient(
+      to bottom,
+      #050b2f 0%,
+      #071b58 38%,
+      #0b2f6f 58%,
+      #0b466d 100%
+    );
+  box-shadow:
+    inset 0 0 0 4px #253b80,
+    6px 6px 0 #0a0d16;
+  image-rendering: pixelated;
 }
 
+/* HUD */
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 30;
+  text-align: left;
+  color: #ffffff;
+  font-size: 25px;
+  font-weight: bold;
+  line-height: 1.45;
+  text-shadow:
+    3px 0 0 #000,
+    -3px 0 0 #000,
+    0 3px 0 #000,
+    0 -3px 0 #000;
+}
+
+#life {
+  color: #ff4d4d;
+  letter-spacing: 2px;
+}
+
+/* 달 */
+.moon {
+  position: absolute;
+  top: 42px;
+  right: 68px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #d7f6ff;
+  box-shadow:
+    0 0 0 4px #89cfff,
+    0 0 24px rgba(137, 207, 255, 0.6);
+  z-index: 3;
+}
+
+.moon::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -14px;
+  width: 43px;
+  height: 47px;
+  border-radius: 50%;
+  background: #050b2f;
+}
+
+/* 배경 별 */
+.stars-bg {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff7b5;
+  z-index: 2;
+  box-shadow:
+    24px 48px 0 #8ee9ff,
+    72px 16px 0 #ffffff,
+    120px 72px 0 #ffe66b,
+    180px 32px 0 #8ee9ff,
+    230px 86px 0 #ffffff,
+    310px 36px 0 #fff7b5;
+}
+
+.star-1 {
+  top: 30px;
+  left: 40px;
+}
+
+.star-2 {
+  top: 110px;
+  left: 70px;
+  opacity: 0.8;
+}
+
+.star-3 {
+  top: 90px;
+  left: 230px;
+  opacity: 0.9;
+}
+
+.star-4 {
+  top: 160px;
+  left: 320px;
+  opacity: 0.7;
+}
+
+.star-5 {
+  top: 210px;
+  left: 42px;
+  opacity: 0.8;
+}
+
+.star-6 {
+  top: 240px;
+  left: 260px;
+  opacity: 0.7;
+}
+
+/* 배경 구름 */
+.cloud-bg {
+  position: absolute;
+  z-index: 5;
+  opacity: 0.95;
+}
+
+.cloud-left {
+  left: -20px;
+  top: 140px;
+  width: 150px;
+  height: 54px;
+  background:
+    linear-gradient(#9feaff 0 0) 0 30px / 130px 18px,
+    linear-gradient(#caffff 0 0) 16px 18px / 46px 22px,
+    linear-gradient(#b8f5ff 0 0) 56px 8px / 48px 32px,
+    linear-gradient(#86d9ff 0 0) 100px 22px / 42px 24px;
+  background-repeat: no-repeat;
+}
+
+.cloud-right {
+  right: -18px;
+  top: 168px;
+  width: 170px;
+  height: 60px;
+  background:
+    linear-gradient(#8ddcff 0 0) 0 36px / 160px 18px,
+    linear-gradient(#caffff 0 0) 18px 24px / 52px 22px,
+    linear-gradient(#b8f5ff 0 0) 62px 10px / 58px 36px,
+    linear-gradient(#86d9ff 0 0) 120px 26px / 42px 24px;
+  background-repeat: no-repeat;
+}
+
+/* 산 */
+.mountain {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.mountain-back {
+  bottom: 122px;
+  height: 150px;
+  z-index: 6;
+  background:
+    linear-gradient(135deg, transparent 0 50%, #172a69 50% 58%, transparent 58%) 10px 30px / 160px 130px,
+    linear-gradient(135deg, transparent 0 50%, #213a88 50% 58%, transparent 58%) 100px 40px / 190px 140px,
+    linear-gradient(135deg, transparent 0 50%, #14275f 50% 58%, transparent 58%) 250px 50px / 170px 130px;
+  background-repeat: no-repeat;
+}
+
+.mountain-front {
+  bottom: 72px;
+  height: 155px;
+  z-index: 7;
+  background:
+    linear-gradient(135deg, transparent 0 50%, #18375d 50% 58%, transparent 58%) -10px 40px / 180px 140px,
+    linear-gradient(135deg, transparent 0 50%, #214978 50% 58%, transparent 58%) 90px 42px / 210px 150px,
+    linear-gradient(135deg, transparent 0 50%, #17385f 50% 58%, transparent 58%) 250px 50px / 190px 140px;
+  background-repeat: no-repeat;
+}
+
+/* 숲 */
+.forest {
+  position: absolute;
+  left: 0;
+  bottom: 62px;
+  width: 100%;
+  height: 120px;
+  z-index: 10;
+}
+
+.tree {
+  position: absolute;
+  bottom: 0;
+  width: 48px;
+  height: 92px;
+}
+
+.tree::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  bottom: 0;
+  width: 12px;
+  height: 30px;
+  background: #5a321d;
+  border: 3px solid #0a0d16;
+}
+
+.tree::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 18px;
+  width: 48px;
+  height: 70px;
+  background:
+    linear-gradient(135deg, transparent 0 50%, #0f6b4f 50% 60%, transparent 60%) 0 0 / 48px 30px,
+    linear-gradient(135deg, transparent 0 50%, #16815c 50% 60%, transparent 60%) 0 22px / 48px 30px,
+    linear-gradient(135deg, transparent 0 50%, #1c9a6a 50% 60%, transparent 60%) 0 44px / 48px 30px;
+  background-repeat: no-repeat;
+}
+
+.tree-1 {
+  left: 24px;
+  bottom: 4px;
+  transform: scale(1.1);
+}
+
+.tree-2 {
+  left: 90px;
+  bottom: -6px;
+  transform: scale(0.9);
+}
+
+.tree-3 {
+  right: 82px;
+  bottom: -2px;
+  transform: scale(1);
+}
+
+.tree-4 {
+  right: 24px;
+  bottom: 5px;
+  transform: scale(1.2);
+}
+
+.tree-5 {
+  left: 250px;
+  bottom: -12px;
+  transform: scale(0.75);
+}
+
+/* 땅 */
+.ground {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 86px;
+  z-index: 11;
+  background:
+    linear-gradient(to bottom, #3e8f54 0 45%, #1f5c48 45% 100%);
+  border-top: 6px solid #2aa86b;
+}
+
+.ground::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 12px, transparent 12px 24px);
+  background-size: 24px 100%;
+}
+
+/* 플레이어 구름 */
 #player {
   position: absolute;
-  bottom: 20px;
-  left: 180px;
-  width: 60px;
-  height: 60px;
-  font-size: 44px;
-  line-height: 60px;
+  left: 147px;
+  bottom: 92px;
+  width: 126px;
+  height: 70px;
+  z-index: 20;
+  animation: cloudIdle 1.3s steps(2) infinite;
 }
 
+@keyframes cloudIdle {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* 떨어지는 아이템 */
 .item {
   position: absolute;
   top: 0;
-  width: 36px;
-  height: 36px;
-  font-size: 32px;
-  line-height: 36px;
+  width: 55px;
+  height: 55px;
+  z-index: 18;
 }
 
+.fall-light {
+  position: absolute;
+  left: 24px;
+  top: -92px;
+  width: 7px;
+  height: 100px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 245, 125, 0),
+    rgba(255, 245, 125, 0.35),
+    rgba(255, 245, 125, 0.85)
+  );
+  box-shadow: 0 0 16px rgba(255, 226, 67, 0.8);
+}
+
+/* 픽셀아트 공통 */
+.pixel-art {
+  display: grid;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.pixel-cell {
+  width: var(--pixel-size);
+  height: var(--pixel-size);
+}
+
+/* 별 */
+.star-art {
+  --pixel-size: 5px;
+  filter:
+    drop-shadow(0 0 5px #fff36a)
+    drop-shadow(0 0 10px #ffcf32);
+}
+
+/* 플레이어 구름 */
+.cloud-art {
+  --pixel-size: 7px;
+  filter:
+    drop-shadow(0 0 7px rgba(159, 234, 255, 0.9))
+    drop-shadow(5px 5px 0 #1b5d91);
+}
+
+/* 안내 문구 */
 .guide {
-  color: #555;
-  font-size: 14px;
-  margin: 12px 0;
+  display: inline-block;
+  margin: 14px 0 10px;
+  padding: 8px 12px;
+  background: #0a0d16;
+  color: #fff36a;
+  border: 4px solid #6ddcff;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: 4px 4px 0 #000;
 }
 
+/* 재시작 버튼 */
 #restartBtn {
   display: none;
-  padding: 10px 22px;
-  border: none;
-  border-radius: 20px;
-  background: #ff75c8;
-  color: white;
-  font-size: 15px;
+  padding: 12px 28px;
+  background: #ffcf32;
+  color: #0a0d16;
+  border: 5px solid #0a0d16;
+  font-family: "Courier New", monospace;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
+  box-shadow: 5px 5px 0 #000;
 }
 
 #restartBtn:hover {
-  background: #ff4fb7;
+  background: #6ddcff;
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 #000;
+}
+
+#restartBtn:active {
+  transform: translate(5px, 5px);
+  box-shadow: none;
 }
