@@ -380,20 +380,94 @@ body {
   height: 90px;
   background: linear-gradient(
     to bottom,
-    rgba(255, 245, 125, 0),
-    rgba(255, 245, 125, 0.35),
-    rgba(255, 245, 125, 0.85)
+    var(--trail-start, rgba(255, 245, 125, 0)),
+    var(--trail-mid, rgba(255, 245, 125, 0.35)),
+    var(--trail-end, rgba(255, 245, 125, 0.85))
   );
-  box-shadow: 0 0 16px rgba(255, 226, 67, 0.8);
+  box-shadow: var(--trail-shadow, 0 0 16px rgba(255, 226, 67, 0.8));
+}
+
+.item-red .fall-light {
+  --trail-start: rgba(255, 77, 93, 0);
+  --trail-mid: rgba(255, 77, 93, 0.34);
+  --trail-end: rgba(255, 154, 165, 0.9);
+  --trail-shadow: 0 0 18px rgba(255, 77, 93, 0.85);
+}
+
+.item-rainbow .fall-light {
+  width: 8px;
+  background: linear-gradient(
+    to bottom,
+    rgba(125, 252, 255, 0),
+    rgba(125, 252, 255, 0.36),
+    rgba(255, 124, 247, 0.48),
+    rgba(255, 242, 168, 0.9)
+  );
+  box-shadow:
+    0 0 12px rgba(125, 252, 255, 0.85),
+    0 0 20px rgba(255, 124, 247, 0.65);
+}
+
+.item-meteor .fall-light {
+  left: 23px;
+  top: -42px;
+  width: 10px;
+  height: 58px;
+  transform: rotate(28deg);
+  transform-origin: bottom center;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 61, 46, 0),
+    rgba(255, 174, 0, 0.5),
+    rgba(255, 61, 46, 0.88)
+  );
+  box-shadow:
+    0 0 12px rgba(255, 174, 0, 0.9),
+    0 0 20px rgba(255, 61, 46, 0.7);
 }
 
 /* 별이 바닥에 닿았을 때 터지는 이펙트 */
 .star-burst {
+  --burst-core: rgba(255, 255, 255, 0.95);
+  --burst-flash: rgba(255, 217, 31, 0.75);
+  --burst-glow-1: #fff36a;
+  --burst-glow-2: #ffcf32;
+  --burst-ring: #fff36a;
+  --burst-ring-outer: rgba(255, 174, 0, 0.45);
+  --burst-ring-glow: rgba(255, 217, 31, 0.9);
   position: absolute;
   width: 0;
   height: 0;
   z-index: 26;
   pointer-events: none;
+}
+
+.star-burst-red {
+  --burst-flash: rgba(255, 77, 93, 0.78);
+  --burst-glow-1: #ff9aa5;
+  --burst-glow-2: #ff2144;
+  --burst-ring: #ff9aa5;
+  --burst-ring-outer: rgba(201, 0, 43, 0.5);
+  --burst-ring-glow: rgba(255, 77, 93, 0.9);
+}
+
+.star-burst-rainbow {
+  --burst-flash: rgba(125, 252, 255, 0.68);
+  --burst-glow-1: #7dfcff;
+  --burst-glow-2: #ff7cf7;
+  --burst-ring: #fff2a8;
+  --burst-ring-outer: rgba(255, 124, 247, 0.55);
+  --burst-ring-glow: rgba(125, 252, 255, 0.9);
+}
+
+.star-burst-meteor {
+  --burst-core: rgba(255, 230, 107, 0.96);
+  --burst-flash: rgba(255, 61, 46, 0.78);
+  --burst-glow-1: #ffae00;
+  --burst-glow-2: #ff3d2e;
+  --burst-ring: #ffae00;
+  --burst-ring-outer: rgba(94, 86, 85, 0.62);
+  --burst-ring-glow: rgba(255, 61, 46, 0.82);
 }
 
 .star-burst::before {
@@ -404,11 +478,11 @@ body {
   width: 48px;
   height: 48px;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 10%, transparent 11%),
-    radial-gradient(circle, rgba(255, 217, 31, 0.75) 0 42%, transparent 44%);
+    radial-gradient(circle, var(--burst-core) 0 10%, transparent 11%),
+    radial-gradient(circle, var(--burst-flash) 0 42%, transparent 44%);
   filter:
-    drop-shadow(0 0 6px #fff36a)
-    drop-shadow(0 0 14px #ffcf32);
+    drop-shadow(0 0 6px var(--burst-glow-1))
+    drop-shadow(0 0 14px var(--burst-glow-2));
   animation: burstFlash 0.42s steps(4) forwards;
 }
 
@@ -419,10 +493,10 @@ body {
   top: -18px;
   width: 40px;
   height: 22px;
-  border: 4px solid #fff36a;
+  border: 4px solid var(--burst-ring);
   box-shadow:
-    0 0 0 4px rgba(255, 174, 0, 0.45),
-    0 0 12px rgba(255, 217, 31, 0.9);
+    0 0 0 4px var(--burst-ring-outer),
+    0 0 12px var(--burst-ring-glow);
   animation: burstRing 0.42s steps(4) forwards;
 }
 
@@ -508,6 +582,27 @@ body {
   filter:
     drop-shadow(0 0 4px #fff36a)
     drop-shadow(0 0 8px #ffcf32);
+}
+
+.star-art-red {
+  filter:
+    drop-shadow(0 0 4px #ff9aa5)
+    drop-shadow(0 0 9px #ff2144);
+}
+
+.star-art-rainbow {
+  filter:
+    drop-shadow(0 0 4px #7dfcff)
+    drop-shadow(0 0 8px #ff7cf7)
+    drop-shadow(0 0 12px rgba(255, 242, 168, 0.75));
+}
+
+/* 운석 */
+.meteor-art {
+  --pixel-size: 4px;
+  filter:
+    drop-shadow(0 0 4px #ffae00)
+    drop-shadow(0 0 8px rgba(255, 61, 46, 0.8));
 }
 
 /* 플레이어 구름 */

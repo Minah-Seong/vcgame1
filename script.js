@@ -21,6 +21,8 @@ let gameLoopTimer = null;
 
 const playerBottom = 49;
 const itemSize = 44;
+const yellowStarBaseSpeedMin = 3.6;
+const yellowStarBaseSpeedRange = 2.2;
 
 function getGameWidth() {
   return gameArea.clientWidth;
@@ -72,6 +74,12 @@ const colors = {
   D: "#6ddcff",
   S: "#d9faff",
   G: "#72c9e8",
+  K: "#1e1b22",
+  M: "#5e5655",
+  N: "#8a7d73",
+  H: "#b8ada1",
+  E: "#302b31",
+  R: "#ff3d2e",
   T: "transparent"
 };
 
@@ -88,6 +96,103 @@ const starMap = [
   "BYOBTBOYBTT",
   "BBTTTTTBBTT"
 ];
+
+const meteorMap = [
+  "TTTTTTOORRT",
+  "TTTTTOORRRT",
+  "TTTTOORRTTT",
+  "TTTKKKKTTTT",
+  "TTKNNNKTTTT",
+  "TKNNHNNKTTT",
+  "TKNNEHNKKTT",
+  "TKNNNNNNKTT",
+  "TTKNEHNKTTT",
+  "TTTKNNKTTTT",
+  "TTTTKKTTTTT"
+];
+
+const starPalettes = {
+  yellow: {
+    B: "#13001f",
+    Y: "#ffd91f",
+    L: "#fff36a",
+    O: "#ffae00"
+  },
+  red: {
+    B: "#2b0616",
+    Y: "#ff4d5d",
+    L: "#ff9aa5",
+    O: "#c9002b"
+  },
+  rainbow: {
+    B: "#160022",
+    Y: "#7dfcff",
+    L: "#fff2a8",
+    O: "#ff7cf7"
+  }
+};
+
+const itemTypes = [
+  {
+    id: "yellow",
+    itemClass: "item-yellow",
+    map: starMap,
+    artClass: "star-art star-art-yellow",
+    palette: starPalettes.yellow,
+    scoreValue: 10,
+    chance: 50,
+    speedMultiplier: 1,
+    loseLifeOnGround: true,
+    burstType: "yellow",
+    isObstacle: false
+  },
+  {
+    id: "red",
+    itemClass: "item-red",
+    map: starMap,
+    artClass: "star-art star-art-red",
+    palette: starPalettes.red,
+    scoreValue: 20,
+    chance: 20,
+    speedMultiplier: 1.25,
+    loseLifeOnGround: true,
+    burstType: "red",
+    isObstacle: false
+  },
+  {
+    id: "rainbow",
+    itemClass: "item-rainbow",
+    map: starMap,
+    artClass: "star-art star-art-rainbow",
+    palette: starPalettes.rainbow,
+    scoreValue: 50,
+    chance: 10,
+    speedMultiplier: 1.55,
+    loseLifeOnGround: true,
+    burstType: "rainbow",
+    isObstacle: false
+  },
+  {
+    id: "meteor",
+    itemClass: "item-meteor",
+    map: meteorMap,
+    artClass: "meteor-art",
+    palette: colors,
+    scoreValue: -10,
+    chance: 20,
+    speedMultiplier: 1,
+    loseLifeOnGround: false,
+    burstType: "meteor",
+    isObstacle: true
+  }
+];
+
+const burstPalettes = {
+  yellow: ["#ffd91f", "#fff36a", "#ffffff", "#ffae00", "#ffd91f", "#fff36a", "#ffae00", "#ffffff"],
+  red: ["#ff4d5d", "#ff9aa5", "#ffffff", "#ff2144", "#c9002b", "#ff9aa5", "#ff4d5d", "#ffffff"],
+  rainbow: ["#7dfcff", "#ff7cf7", "#fff2a8", "#8affc1", "#9f8cff", "#ffffff", "#67e8ff", "#ff9af8"],
+  meteor: ["#ff3d2e", "#ffae00", "#ffe66b", "#8a7d73", "#5e5655", "#302b31", "#ff6b35", "#c6b8a9"]
+};
 
 /*
   구름 픽셀맵
@@ -276,6 +381,17 @@ function playCatchSound() {
   playNoise(now, 0.045, 0.06, sfxGain);
 }
 
+function playMeteorCatchSound() {
+  if (!audioContext || !sfxGain) return;
+
+  const now = audioContext.currentTime;
+
+  playTone(220.00, now, 0.08, "sawtooth", 0.18, sfxGain);
+  playTone(146.83, now + 0.04, 0.12, "square", 0.16, sfxGain);
+  playTone(98.00, now + 0.1, 0.14, "triangle", 0.14, sfxGain);
+  playNoise(now, 0.18, 0.16, sfxGain);
+}
+
 function playBurstSound() {
   if (!audioContext || !sfxGain) return;
 
@@ -290,14 +406,14 @@ function playBurstSound() {
    픽셀아트 생성
    ========================= */
 
-function createPixelArt(target, map, className) {
+function createPixelArt(target, map, className, palette = colors) {
   target.innerHTML = "";
 
-  const art = createPixelArtElement(map, className);
+  const art = createPixelArtElement(map, className, palette);
   target.appendChild(art);
 }
 
-function createPixelArtElement(map, className) {
+function createPixelArtElement(map, className, palette = colors) {
   const width = map[0].length;
   const height = map.length;
 
@@ -308,7 +424,13 @@ function createPixelArtElement(map, className) {
   }
 
   const art = document.createElement("div");
-  art.classList.add("pixel-art", className);
+  art.classList.add("pixel-art");
+
+  className.split(" ").forEach(name => {
+    if (name) {
+      art.classList.add(name);
+    }
+  });
 
   art.style.gridTemplateColumns = `repeat(${width}, var(--pixel-size))`;
   art.style.gridTemplateRows = `repeat(${height}, var(--pixel-size))`;
@@ -317,7 +439,7 @@ function createPixelArtElement(map, className) {
     row.split("").forEach(code => {
       const cell = document.createElement("div");
       cell.classList.add("pixel-cell");
-      cell.style.backgroundColor = colors[code] || "transparent";
+      cell.style.backgroundColor = palette[code] || colors[code] || "transparent";
       art.appendChild(cell);
     });
   });
@@ -325,30 +447,32 @@ function createPixelArtElement(map, className) {
   return art;
 }
 
-function createBurstEffect(x, y) {
+function createBurstEffect(x, y, burstType = "yellow") {
   const burst = document.createElement("div");
-  burst.classList.add("star-burst");
+  burst.classList.add("star-burst", `star-burst-${burstType}`);
 
   burst.style.left = x + "px";
   burst.style.top = y - 6 + "px";
 
-  const particles = [
-    { x: -34, y: -16, color: "#ffd91f" },
-    { x: -24, y: -34, color: "#fff36a" },
-    { x: -10, y: -46, color: "#ffffff" },
-    { x: 10, y: -44, color: "#ffae00" },
-    { x: 25, y: -30, color: "#ffd91f" },
-    { x: 36, y: -12, color: "#fff36a" },
-    { x: -18, y: 8, color: "#ffae00" },
-    { x: 18, y: 8, color: "#ffffff" }
+  const positions = [
+    { x: -34, y: -16 },
+    { x: -24, y: -34 },
+    { x: -10, y: -46 },
+    { x: 10, y: -44 },
+    { x: 25, y: -30 },
+    { x: 36, y: -12 },
+    { x: -18, y: 8 },
+    { x: 18, y: 8 }
   ];
 
-  particles.forEach(particleData => {
+  const palette = burstPalettes[burstType] || burstPalettes.yellow;
+
+  positions.forEach((particleData, index) => {
     const particle = document.createElement("span");
     particle.classList.add("burst-particle");
     particle.style.setProperty("--burst-x", particleData.x + "px");
     particle.style.setProperty("--burst-y", particleData.y + "px");
-    particle.style.setProperty("--particle-color", particleData.color);
+    particle.style.setProperty("--particle-color", palette[index % palette.length]);
     burst.appendChild(particle);
   });
 
@@ -413,22 +537,40 @@ function movePlayer() {
   clampPlayerPosition();
 }
 
+function getRandomItemType() {
+  const randomValue = Math.random() * 100;
+  let chanceTotal = 0;
+
+  for (const itemType of itemTypes) {
+    chanceTotal += itemType.chance;
+
+    if (randomValue < chanceTotal) {
+      return itemType;
+    }
+  }
+
+  return itemTypes[0];
+}
+
 function createItem() {
   if (!gameRunning) return;
 
+  const itemType = getRandomItemType();
   const item = document.createElement("div");
-  item.classList.add("item");
+  item.classList.add("item", itemType.itemClass);
 
   const light = document.createElement("div");
   light.classList.add("fall-light");
 
-  const star = createPixelArtElement(starMap, "star-art");
+  const itemArt = createPixelArtElement(itemType.map, itemType.artClass, itemType.palette);
 
   item.appendChild(light);
-  item.appendChild(star);
+  item.appendChild(itemArt);
 
   const maxItemX = Math.max(0, getGameWidth() - itemSize);
   const randomX = Math.floor(Math.random() * maxItemX);
+  const randomBaseSpeed = yellowStarBaseSpeedMin + Math.random() * yellowStarBaseSpeedRange;
+
   item.style.left = randomX + "px";
   item.style.top = "-20px";
 
@@ -438,8 +580,59 @@ function createItem() {
     element: item,
     x: randomX,
     y: -20,
-    speed: 3.6 + Math.random() * 2.2
+    speed: randomBaseSpeed * itemType.speedMultiplier,
+    scoreValue: itemType.scoreValue,
+    loseLifeOnGround: itemType.loseLifeOnGround,
+    burstType: itemType.burstType,
+    isObstacle: itemType.isObstacle
   });
+}
+
+function removeItemAt(index) {
+  const item = items[index];
+
+  if (item.element.parentNode) {
+    gameArea.removeChild(item.element);
+  }
+
+  items.splice(index, 1);
+}
+
+function catchItem(item, index) {
+  score += item.scoreValue;
+  scoreText.textContent = score;
+
+  createBurstEffect(item.x + itemSize / 2, item.y + itemSize / 2, item.burstType);
+
+  if (item.isObstacle) {
+    playMeteorCatchSound();
+  } else {
+    playCatchSound();
+  }
+
+  removeItemAt(index);
+
+  if (score >= 100) {
+    endGame("승리! 별 100점을 모았습니다!");
+  }
+}
+
+function hitGround(item, index, groundTop) {
+  createBurstEffect(item.x + itemSize / 2, groundTop, item.burstType);
+  playBurstSound();
+
+  removeItemAt(index);
+
+  if (!item.loseLifeOnGround) {
+    return;
+  }
+
+  life--;
+  updateLife();
+
+  if (life <= 0) {
+    endGame("패배! 목숨을 모두 잃었습니다.", 560);
+  }
 }
 
 function gameLoop() {
@@ -467,30 +660,9 @@ function gameLoop() {
     const isGroundHit = item.y + itemSize >= groundTop;
 
     if (isHit) {
-      score += 10;
-      scoreText.textContent = score;
-
-      playCatchSound();
-
-      gameArea.removeChild(item.element);
-      items.splice(i, 1);
-
-      if (score >= 100) {
-        endGame("승리! 별 100점을 모았습니다!");
-      }
+      catchItem(item, i);
     } else if (isGroundHit) {
-      life--;
-      updateLife();
-
-      createBurstEffect(item.x + itemSize / 2, groundTop);
-      playBurstSound();
-
-      gameArea.removeChild(item.element);
-      items.splice(i, 1);
-
-      if (life <= 0) {
-        endGame("패배! 목숨을 모두 잃었습니다.", 560);
-      }
+      hitGround(item, i, groundTop);
     }
   }
 }
