@@ -16,7 +16,7 @@ let life = 3;
 let playerX = 0;
 let playerSpeed = 10;
 let gameRunning = false;
-let timeLeft = 60;
+let timeLeft = 30;
 let gameStartTime = 0;
 
 let leftPressed = false;
@@ -30,7 +30,7 @@ const playerBottom = 49;
 const itemSize = 44;
 const yellowStarBaseSpeedMin = 3.6;
 const yellowStarBaseSpeedRange = 2.2;
-const GAME_TIME_LIMIT = 60;
+const GAME_TIME_LIMIT = 30;
 const WIN_SCORE = 200;
 
 function getGameWidth() {
