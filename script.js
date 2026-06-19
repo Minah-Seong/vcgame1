@@ -5,6 +5,9 @@ const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 const ground = document.querySelector(".ground");
+const resultPopup = document.getElementById("resultPopup");
+const resultTitle = document.getElementById("resultTitle");
+const resultMessage = document.getElementById("resultMessage");
 
 let score = 0;
 let life = 3;
@@ -613,7 +616,7 @@ function catchItem(item, index) {
   removeItemAt(index);
 
   if (score >= 100) {
-    endGame("승리! 별 100점을 모았습니다!");
+    endGame("clear", "별 100점을 모았습니다!");
   }
 }
 
@@ -631,7 +634,7 @@ function hitGround(item, index, groundTop) {
   updateLife();
 
   if (life <= 0) {
-    endGame("패배! 목숨을 모두 잃었습니다.", 560);
+    endGame("game-over", "목숨을 모두 잃었습니다.", 560);
   }
 }
 
@@ -712,6 +715,7 @@ function resetGameState() {
 
   scoreText.textContent = score;
   updateLife();
+  hideResultPopup();
 
   clampPlayerPosition();
 
@@ -726,7 +730,28 @@ function resetGameState() {
   clearBurstEffects();
 }
 
-function endGame(message, delay = 100) {
+function showResultPopup(resultType, message) {
+  if (!resultPopup || !resultTitle || !resultMessage) return;
+
+  const isClear = resultType === "clear";
+
+  resultTitle.textContent = isClear ? "CLEAR" : "GAME OVER";
+  resultMessage.textContent = message;
+
+  resultPopup.classList.remove("hidden", "result-clear", "result-game-over");
+  resultPopup.classList.add(isClear ? "result-clear" : "result-game-over");
+  resultPopup.setAttribute("aria-hidden", "false");
+}
+
+function hideResultPopup() {
+  if (!resultPopup) return;
+
+  resultPopup.classList.add("hidden");
+  resultPopup.classList.remove("result-clear", "result-game-over");
+  resultPopup.setAttribute("aria-hidden", "true");
+}
+
+function endGame(resultType, message, delay = 100) {
   gameRunning = false;
 
   clearGameTimers();
@@ -736,7 +761,7 @@ function endGame(message, delay = 100) {
   rightPressed = false;
 
   setTimeout(() => {
-    alert(message);
+    showResultPopup(resultType, message);
     restartBtn.style.display = "inline-block";
   }, delay);
 }
@@ -748,6 +773,7 @@ function startGame() {
 
   startBtn.style.display = "none";
   restartBtn.style.display = "none";
+  hideResultPopup();
 
   clearGameTimers();
 

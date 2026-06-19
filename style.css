@@ -514,6 +514,117 @@ body {
   animation: burstParticle 0.5s steps(5) forwards;
 }
 
+
+/* 승리 / 패배 결과 팝업 */
+.result-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: rgba(5, 11, 47, 0.62);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.result-popup.hidden {
+  display: none;
+}
+
+.result-card {
+  min-width: min(86%, 420px);
+  padding: 28px 24px 24px;
+  background: #101833;
+  border: 6px solid #0a0d16;
+  box-shadow:
+    0 0 0 5px #6ddcff,
+    8px 8px 0 #000;
+  text-align: center;
+  animation: resultPopupIn 0.42s steps(5) forwards;
+}
+
+.result-title {
+  margin-bottom: 12px;
+  color: #fff36a;
+  font-size: clamp(42px, 9vw, 74px);
+  font-weight: bold;
+  letter-spacing: 4px;
+  line-height: 1;
+  text-shadow:
+    4px 0 0 #000,
+    -4px 0 0 #000,
+    0 4px 0 #000,
+    0 -4px 0 #000,
+    6px 6px 0 #3553b8;
+}
+
+.result-message {
+  color: #ffffff;
+  font-size: clamp(14px, 3vw, 20px);
+  font-weight: bold;
+  line-height: 1.4;
+  text-shadow:
+    2px 0 0 #000,
+    -2px 0 0 #000,
+    0 2px 0 #000,
+    0 -2px 0 #000;
+}
+
+.result-clear .result-card {
+  box-shadow:
+    0 0 0 5px #fff36a,
+    0 0 24px rgba(255, 243, 106, 0.55),
+    8px 8px 0 #000;
+}
+
+.result-clear .result-title {
+  color: #fff36a;
+  text-shadow:
+    4px 0 0 #000,
+    -4px 0 0 #000,
+    0 4px 0 #000,
+    0 -4px 0 #000,
+    6px 6px 0 #ff7cf7,
+    0 0 18px rgba(255, 243, 106, 0.9);
+}
+
+.result-game-over .result-card {
+  box-shadow:
+    0 0 0 5px #ff4d5d,
+    0 0 24px rgba(255, 77, 93, 0.48),
+    8px 8px 0 #000;
+}
+
+.result-game-over .result-title {
+  color: #ff4d5d;
+  text-shadow:
+    4px 0 0 #000,
+    -4px 0 0 #000,
+    0 4px 0 #000,
+    0 -4px 0 #000,
+    6px 6px 0 #5e001d,
+    0 0 18px rgba(255, 77, 93, 0.8);
+}
+
+@keyframes resultPopupIn {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.82);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.04);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes burstFlash {
   0% {
     opacity: 1;
