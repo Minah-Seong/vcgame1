@@ -753,9 +753,35 @@ body {
   text-shadow: 2px 2px 0 #000;
 }
 
-/* 시작 / 재시작 버튼 */
+/* 시작 / 재시작 / 난이도 버튼 */
+.control-panel {
+  width: min(100%, 660px);
+  margin: 14px auto 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.main-buttons,
+.difficulty-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.main-buttons {
+  justify-content: flex-start;
+}
+
+.difficulty-panel {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 #startBtn,
-#restartBtn {
+#restartBtn,
+.difficulty-btn {
   padding: 12px 28px;
   background: #ffcf32;
   color: #0a0d16;
@@ -767,6 +793,22 @@ body {
   box-shadow: 5px 5px 0 #000;
 }
 
+.difficulty-btn {
+  padding: 10px 14px;
+  background: #101833;
+  color: #8ee9ff;
+  border-width: 4px;
+  font-size: 13px;
+}
+
+.difficulty-btn.active {
+  background: #ff7cf7;
+  color: #ffffff;
+  box-shadow:
+    0 0 0 3px #fff36a,
+    5px 5px 0 #000;
+}
+
 #startBtn {
   display: inline-block;
 }
@@ -776,14 +818,16 @@ body {
 }
 
 #startBtn:hover,
-#restartBtn:hover {
+#restartBtn:hover,
+.difficulty-btn:hover {
   background: #6ddcff;
   transform: translate(2px, 2px);
   box-shadow: 3px 3px 0 #000;
 }
 
 #startBtn:active,
-#restartBtn:active {
+#restartBtn:active,
+.difficulty-btn:active {
   transform: translate(5px, 5px);
   box-shadow: none;
 }
@@ -811,5 +855,19 @@ body {
 
   .hud {
     font-size: 20px;
+  }
+
+  .control-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .main-buttons,
+  .difficulty-panel {
+    justify-content: center;
+  }
+
+  .difficulty-btn {
+    flex: 1;
   }
 }

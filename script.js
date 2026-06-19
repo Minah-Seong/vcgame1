@@ -6,6 +6,9 @@ const goalText = document.getElementById("goal");
 const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
+const difficultyText = document.getElementById("difficulty");
+const clearNote = document.getElementById("clearNote");
+const difficultyButtons = document.querySelectorAll(".difficulty-btn");
 const ground = document.querySelector(".ground");
 const resultPopup = document.getElementById("resultPopup");
 const resultTitle = document.getElementById("resultTitle");
@@ -18,6 +21,7 @@ let playerSpeed = 10;
 let gameRunning = false;
 let timeLeft = 30;
 let gameStartTime = 0;
+let currentDifficultyLevel = 2;
 
 let leftPressed = false;
 let rightPressed = false;
@@ -25,13 +29,82 @@ let rightPressed = false;
 let items = [];
 let itemCreateTimer = null;
 let gameLoopTimer = null;
+let resultPopupTimer = null;
 
 const playerBottom = 49;
 const itemSize = 44;
 const yellowStarBaseSpeedMin = 3.6;
 const yellowStarBaseSpeedRange = 2.2;
-const GAME_TIME_LIMIT = 30;
-const WIN_SCORE = 200;
+
+const difficultySettings = {
+  1: {
+    level: 1,
+    label: "1단계",
+    timeLimit: 30,
+    winScore: 100,
+    itemCreateInterval: 900,
+    extraItemChance: 0
+  },
+  2: {
+    level: 2,
+    label: "2단계",
+    timeLimit: 30,
+    winScore: 200,
+    itemCreateInterval: 900,
+    extraItemChance: 0
+  },
+  3: {
+    level: 3,
+    label: "3단계",
+    timeLimit: 30,
+    winScore: 300,
+    itemCreateInterval: 520,
+    extraItemChance: 0.55
+  }
+};
+
+function getCurrentDifficulty() {
+  return difficultySettings[currentDifficultyLevel] || difficultySettings[2];
+}
+
+function getGameTimeLimit() {
+  return getCurrentDifficulty().timeLimit;
+}
+
+function getWinScore() {
+  return getCurrentDifficulty().winScore;
+}
+
+function updateDifficultyDisplay() {
+  const difficulty = getCurrentDifficulty();
+
+  if (difficultyText) {
+    difficultyText.textContent = difficulty.level;
+  }
+
+  if (clearNote) {
+    clearNote.textContent = `${difficulty.label}: ${difficulty.timeLimit}초 안에 ${difficulty.winScore}점 이상을 넘기면 CLEAR!`;
+  }
+
+  difficultyButtons.forEach(button => {
+    const isActive = Number(button.dataset.level) === difficulty.level;
+    button.classList.toggle("active", isActive);
+  });
+}
+
+function selectDifficulty(level) {
+  if (!difficultySettings[level]) return;
+
+  currentDifficultyLevel = level;
+  gameRunning = false;
+
+  clearGameTimers();
+  stopBgm();
+  resetGameState();
+
+  startBtn.style.display = "inline-block";
+  restartBtn.style.display = "none";
+}
 
 function getGameWidth() {
   return gameArea.clientWidth;
@@ -253,6 +326,11 @@ window.addEventListener("resize", resizeGameHandler);
 
 startBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", restartGame);
+difficultyButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    selectDifficulty(Number(button.dataset.level));
+  });
+});
 
 createPixelArt(player, cloudMap, "cloud-art");
 resetGameState();
@@ -597,6 +675,18 @@ function createItem() {
   });
 }
 
+function createItemWave() {
+  if (!gameRunning) return;
+
+  const difficulty = getCurrentDifficulty();
+
+  createItem();
+
+  if (difficulty.extraItemChance > 0 && Math.random() < difficulty.extraItemChance) {
+    createItem();
+  }
+}
+
 function removeItemAt(index) {
   const item = items[index];
 
@@ -628,8 +718,10 @@ function catchItem(item, index) {
     return;
   }
 
-  if (score >= WIN_SCORE) {
-    endGame("clear", `${WIN_SCORE}점 이상을 달성했습니다!`);
+  const targetScore = getWinScore();
+
+  if (score >= targetScore) {
+    endGame("clear", `${targetScore}점 이상을 달성했습니다!`);
   }
 }
 
@@ -648,15 +740,17 @@ function updateTimerDisplay() {
 
 function updateGoalDisplay() {
   if (goalText) {
-    goalText.textContent = WIN_SCORE;
+    goalText.textContent = getWinScore();
   }
+
+  updateDifficultyDisplay();
 }
 
 function updateGameTimer() {
   if (!gameRunning) return;
 
   const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
-  const nextTimeLeft = Math.max(0, GAME_TIME_LIMIT - elapsedSeconds);
+  const nextTimeLeft = Math.max(0, getGameTimeLimit() - elapsedSeconds);
 
   if (nextTimeLeft !== timeLeft) {
     timeLeft = nextTimeLeft;
@@ -664,10 +758,12 @@ function updateGameTimer() {
   }
 
   if (timeLeft <= 0) {
-    if (score >= WIN_SCORE) {
-      endGame("clear", `${WIN_SCORE}점 이상을 달성했습니다!`);
+    const targetScore = getWinScore();
+
+    if (score >= targetScore) {
+      endGame("clear", `${targetScore}점 이상을 달성했습니다!`);
     } else {
-      endGame("game-over", `시간 종료! ${WIN_SCORE}점 이상을 넘지 못했습니다.`);
+      endGame("game-over", `시간 종료! ${targetScore}점 이상을 넘지 못했습니다.`);
     }
   }
 }
@@ -745,12 +841,17 @@ function clearGameTimers() {
     clearInterval(gameLoopTimer);
     gameLoopTimer = null;
   }
+
+  if (resultPopupTimer) {
+    clearTimeout(resultPopupTimer);
+    resultPopupTimer = null;
+  }
 }
 
 function resetGameState() {
   score = 0;
   life = 3;
-  timeLeft = GAME_TIME_LIMIT;
+  timeLeft = getGameTimeLimit();
   gameStartTime = 0;
   playerX = getCenteredPlayerX();
 
@@ -806,9 +907,14 @@ function endGame(resultType, message, delay = 100) {
   leftPressed = false;
   rightPressed = false;
 
-  setTimeout(() => {
+  if (resultPopupTimer) {
+    clearTimeout(resultPopupTimer);
+  }
+
+  resultPopupTimer = setTimeout(() => {
     showResultPopup(resultType, message);
     restartBtn.style.display = "inline-block";
+    resultPopupTimer = null;
   }, delay);
 }
 
@@ -816,7 +922,7 @@ function startGame() {
   if (gameRunning) return;
 
   gameRunning = true;
-  timeLeft = GAME_TIME_LIMIT;
+  timeLeft = getGameTimeLimit();
   gameStartTime = Date.now();
   updateTimerDisplay();
   updateGoalDisplay();
@@ -835,9 +941,9 @@ function startGame() {
       console.warn("오디오를 시작할 수 없습니다.", error);
     });
 
-  createItem();
+  createItemWave();
 
-  itemCreateTimer = setInterval(createItem, 900);
+  itemCreateTimer = setInterval(createItemWave, getCurrentDifficulty().itemCreateInterval);
   gameLoopTimer = setInterval(gameLoop, 20);
 }
 

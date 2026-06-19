@@ -18,6 +18,7 @@
         <div>SCORE: <span id="score">0</span></div>
         <div>TIME: <span id="timer">30</span></div>
         <div>GOAL: <span id="goal">200</span></div>
+        <div>LEVEL: <span id="difficulty">2</span></div>
         <div>LIVES: <span id="life">❤❤❤</span></div>
       </div>
 
@@ -57,12 +58,22 @@
     </div>
 
     <p class="guide">← → 방향키를 누르고 있으면 계속 이동합니다</p>
-    <p class="sound-note">30초 안에 200점 이상을 넘기면 CLEAR!</p>
+    <p id="clearNote" class="sound-note">2단계: 30초 안에 200점 이상을 넘기면 CLEAR!</p>
     <p class="sound-note">노란 별 +10 · 붉은 별 +20 · 무지개 별 +50 · 운석 -50 / 목숨 -1</p>
     <p class="sound-note">START를 누르면 키치한 8비트 BGM이 재생됩니다</p>
 
-    <button id="startBtn">START</button>
-    <button id="restartBtn">RESTART</button>
+    <div class="control-panel">
+      <div class="main-buttons">
+        <button id="startBtn">START</button>
+        <button id="restartBtn">RESTART</button>
+      </div>
+
+      <div class="difficulty-panel" aria-label="난이도 선택">
+        <button class="difficulty-btn" data-level="1" type="button">1단계</button>
+        <button class="difficulty-btn active" data-level="2" type="button">2단계</button>
+        <button class="difficulty-btn" data-level="3" type="button">3단계</button>
+      </div>
+    </div>
   </div>
 
   <script src="script.js"></script>
