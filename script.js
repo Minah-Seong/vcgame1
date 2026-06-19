@@ -4,6 +4,7 @@ const scoreText = document.getElementById("score");
 const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
+const ground = document.querySelector(".ground");
 
 let score = 0;
 let life = 3;
@@ -18,7 +19,7 @@ let items = [];
 let itemCreateTimer = null;
 let gameLoopTimer = null;
 
-const playerBottom = 92;
+const playerBottom = 49;
 const itemSize = 44;
 
 function getGameWidth() {
@@ -27,6 +28,11 @@ function getGameWidth() {
 
 function getGameHeight() {
   return gameArea.clientHeight;
+}
+
+function getGroundTop() {
+  const groundHeight = ground ? ground.offsetHeight : 43;
+  return getGameHeight() - groundHeight;
 }
 
 function getPlayerWidth() {
@@ -270,6 +276,16 @@ function playCatchSound() {
   playNoise(now, 0.045, 0.06, sfxGain);
 }
 
+function playBurstSound() {
+  if (!audioContext || !sfxGain) return;
+
+  const now = audioContext.currentTime;
+
+  playTone(329.63, now, 0.08, "square", 0.22, sfxGain);
+  playTone(196.00, now + 0.045, 0.1, "triangle", 0.16, sfxGain);
+  playNoise(now, 0.11, 0.12, sfxGain);
+}
+
 /* =========================
    픽셀아트 생성
    ========================= */
@@ -307,6 +323,48 @@ function createPixelArtElement(map, className) {
   });
 
   return art;
+}
+
+function createBurstEffect(x, y) {
+  const burst = document.createElement("div");
+  burst.classList.add("star-burst");
+
+  burst.style.left = x + "px";
+  burst.style.top = y - 6 + "px";
+
+  const particles = [
+    { x: -34, y: -16, color: "#ffd91f" },
+    { x: -24, y: -34, color: "#fff36a" },
+    { x: -10, y: -46, color: "#ffffff" },
+    { x: 10, y: -44, color: "#ffae00" },
+    { x: 25, y: -30, color: "#ffd91f" },
+    { x: 36, y: -12, color: "#fff36a" },
+    { x: -18, y: 8, color: "#ffae00" },
+    { x: 18, y: 8, color: "#ffffff" }
+  ];
+
+  particles.forEach(particleData => {
+    const particle = document.createElement("span");
+    particle.classList.add("burst-particle");
+    particle.style.setProperty("--burst-x", particleData.x + "px");
+    particle.style.setProperty("--burst-y", particleData.y + "px");
+    particle.style.setProperty("--particle-color", particleData.color);
+    burst.appendChild(particle);
+  });
+
+  gameArea.appendChild(burst);
+
+  setTimeout(() => {
+    if (burst.parentNode) {
+      burst.parentNode.removeChild(burst);
+    }
+  }, 520);
+}
+
+function clearBurstEffects() {
+  gameArea.querySelectorAll(".star-burst").forEach(effect => {
+    effect.remove();
+  });
 }
 
 /* =========================
@@ -398,12 +456,15 @@ function gameLoop() {
     const playerWidth = getPlayerWidth();
     const playerHeight = getPlayerHeight();
     const playerY = getGameHeight() - playerBottom - playerHeight;
+    const groundTop = getGroundTop();
 
     const isHit =
       item.x < playerX + playerWidth &&
       item.x + itemSize > playerX &&
       item.y < playerY + playerHeight &&
       item.y + itemSize > playerY;
+
+    const isGroundHit = item.y + itemSize >= groundTop;
 
     if (isHit) {
       score += 10;
@@ -417,15 +478,18 @@ function gameLoop() {
       if (score >= 100) {
         endGame("승리! 별 100점을 모았습니다!");
       }
-    } else if (item.y > getGameHeight()) {
+    } else if (isGroundHit) {
       life--;
       updateLife();
+
+      createBurstEffect(item.x + itemSize / 2, groundTop);
+      playBurstSound();
 
       gameArea.removeChild(item.element);
       items.splice(i, 1);
 
       if (life <= 0) {
-        endGame("패배! 목숨을 모두 잃었습니다.");
+        endGame("패배! 목숨을 모두 잃었습니다.", 560);
       }
     }
   }
@@ -486,9 +550,11 @@ function resetGameState() {
   });
 
   items = [];
+
+  clearBurstEffects();
 }
 
-function endGame(message) {
+function endGame(message, delay = 100) {
   gameRunning = false;
 
   clearGameTimers();
@@ -500,7 +566,7 @@ function endGame(message) {
   setTimeout(() => {
     alert(message);
     restartBtn.style.display = "inline-block";
-  }, 100);
+  }, delay);
 }
 
 function startGame() {

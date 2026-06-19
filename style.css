@@ -220,7 +220,7 @@ body {
 }
 
 .mountain-back {
-  bottom: 122px;
+  bottom: 79px;
   height: 150px;
   z-index: 6;
   background:
@@ -233,7 +233,7 @@ body {
 }
 
 .mountain-front {
-  bottom: 72px;
+  bottom: 29px;
   height: 155px;
   z-index: 7;
   background:
@@ -248,7 +248,7 @@ body {
 .forest {
   position: absolute;
   left: 0;
-  bottom: 62px;
+  bottom: 19px;
   width: 100%;
   height: 120px;
   z-index: 10;
@@ -322,7 +322,7 @@ body {
   left: 0;
   bottom: 0;
   width: 100%;
-  height: 86px;
+  height: 43px;
   z-index: 11;
   background:
     linear-gradient(to bottom, #3e8f54 0 45%, #1f5c48 45% 100%);
@@ -342,7 +342,7 @@ body {
 #player {
   position: absolute;
   left: calc(50% - 54px);
-  bottom: 92px;
+  bottom: 49px;
   width: 108px;
   height: 60px;
   z-index: 20;
@@ -385,6 +385,109 @@ body {
     rgba(255, 245, 125, 0.85)
   );
   box-shadow: 0 0 16px rgba(255, 226, 67, 0.8);
+}
+
+/* 별이 바닥에 닿았을 때 터지는 이펙트 */
+.star-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 26;
+  pointer-events: none;
+}
+
+.star-burst::before {
+  content: "";
+  position: absolute;
+  left: -24px;
+  top: -24px;
+  width: 48px;
+  height: 48px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 10%, transparent 11%),
+    radial-gradient(circle, rgba(255, 217, 31, 0.75) 0 42%, transparent 44%);
+  filter:
+    drop-shadow(0 0 6px #fff36a)
+    drop-shadow(0 0 14px #ffcf32);
+  animation: burstFlash 0.42s steps(4) forwards;
+}
+
+.star-burst::after {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: -18px;
+  width: 40px;
+  height: 22px;
+  border: 4px solid #fff36a;
+  box-shadow:
+    0 0 0 4px rgba(255, 174, 0, 0.45),
+    0 0 12px rgba(255, 217, 31, 0.9);
+  animation: burstRing 0.42s steps(4) forwards;
+}
+
+.burst-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--particle-color, #ffd91f);
+  box-shadow:
+    0 0 0 2px #0a0d16,
+    0 0 8px rgba(255, 243, 106, 0.9);
+  transform: translate(-50%, -50%);
+  animation: burstParticle 0.5s steps(5) forwards;
+}
+
+@keyframes burstFlash {
+  0% {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes burstRing {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.35);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(1.65);
+  }
+}
+
+@keyframes burstParticle {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(
+        calc(-50% + var(--burst-x)),
+        calc(-50% + var(--burst-y))
+      )
+      scale(0);
+  }
 }
 
 /* 픽셀아트 공통 */
