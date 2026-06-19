@@ -7,8 +7,8 @@ const restartBtn = document.getElementById("restartBtn");
 
 let score = 0;
 let life = 3;
-let playerX = 147;
-let playerSpeed = 7;
+let playerX = 0;
+let playerSpeed = 10;
 let gameRunning = false;
 
 let leftPressed = false;
@@ -18,14 +18,42 @@ let items = [];
 let itemCreateTimer = null;
 let gameLoopTimer = null;
 
-const gameWidth = 420;
-const gameHeight = 560;
-
-const playerWidth = 126;
-const playerHeight = 70;
 const playerBottom = 92;
+const itemSize = 44;
 
-const itemSize = 55;
+function getGameWidth() {
+  return gameArea.clientWidth;
+}
+
+function getGameHeight() {
+  return gameArea.clientHeight;
+}
+
+function getPlayerWidth() {
+  return player.offsetWidth || 108;
+}
+
+function getPlayerHeight() {
+  return player.offsetHeight || 60;
+}
+
+function getCenteredPlayerX() {
+  return Math.floor((getGameWidth() - getPlayerWidth()) / 2);
+}
+
+function clampPlayerPosition() {
+  const maxPlayerX = getGameWidth() - getPlayerWidth();
+
+  if (playerX < 0) {
+    playerX = 0;
+  }
+
+  if (playerX > maxPlayerX) {
+    playerX = maxPlayerX;
+  }
+
+  player.style.left = playerX + "px";
+}
 
 const colors = {
   B: "#13001f",
@@ -101,6 +129,7 @@ const bgmBass = [
 
 document.addEventListener("keydown", keyDownHandler);
 document.addEventListener("keyup", keyUpHandler);
+window.addEventListener("resize", resizeGameHandler);
 
 startBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", restartGame);
@@ -323,15 +352,7 @@ function movePlayer() {
     playerX += playerSpeed;
   }
 
-  if (playerX < 0) {
-    playerX = 0;
-  }
-
-  if (playerX > gameWidth - playerWidth) {
-    playerX = gameWidth - playerWidth;
-  }
-
-  player.style.left = playerX + "px";
+  clampPlayerPosition();
 }
 
 function createItem() {
@@ -348,7 +369,8 @@ function createItem() {
   item.appendChild(light);
   item.appendChild(star);
 
-  const randomX = Math.floor(Math.random() * (gameWidth - itemSize));
+  const maxItemX = Math.max(0, getGameWidth() - itemSize);
+  const randomX = Math.floor(Math.random() * maxItemX);
   item.style.left = randomX + "px";
   item.style.top = "-20px";
 
@@ -373,7 +395,9 @@ function gameLoop() {
     item.y += item.speed;
     item.element.style.top = item.y + "px";
 
-    const playerY = gameHeight - playerBottom - playerHeight;
+    const playerWidth = getPlayerWidth();
+    const playerHeight = getPlayerHeight();
+    const playerY = getGameHeight() - playerBottom - playerHeight;
 
     const isHit =
       item.x < playerX + playerWidth &&
@@ -393,7 +417,7 @@ function gameLoop() {
       if (score >= 100) {
         endGame("승리! 별 100점을 모았습니다!");
       }
-    } else if (item.y > gameHeight) {
+    } else if (item.y > getGameHeight()) {
       life--;
       updateLife();
 
@@ -417,6 +441,19 @@ function updateLife() {
   lifeText.textContent = lifeDisplay;
 }
 
+function resizeGameHandler() {
+  clampPlayerPosition();
+
+  items.forEach(item => {
+    const maxItemX = Math.max(0, getGameWidth() - itemSize);
+
+    if (item.x > maxItemX) {
+      item.x = maxItemX;
+      item.element.style.left = item.x + "px";
+    }
+  });
+}
+
 function clearGameTimers() {
   if (itemCreateTimer) {
     clearInterval(itemCreateTimer);
@@ -432,7 +469,7 @@ function clearGameTimers() {
 function resetGameState() {
   score = 0;
   life = 3;
-  playerX = 147;
+  playerX = getCenteredPlayerX();
 
   leftPressed = false;
   rightPressed = false;
@@ -440,7 +477,7 @@ function resetGameState() {
   scoreText.textContent = score;
   updateLife();
 
-  player.style.left = playerX + "px";
+  clampPlayerPosition();
 
   items.forEach(item => {
     if (item.element.parentNode) {
