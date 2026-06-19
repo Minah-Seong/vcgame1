@@ -815,6 +815,11 @@ body {
   flex-wrap: wrap;
 }
 
+.infinite-mode-btn {
+  min-width: 92px;
+  white-space: nowrap;
+}
+
 #startBtn,
 #restartBtn,
 .difficulty-btn {

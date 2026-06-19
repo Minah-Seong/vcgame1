@@ -40,33 +40,63 @@ const yellowStarBaseSpeedRange = 2.2;
 
 const difficultySettings = {
   1: {
+    key: "1",
     level: 1,
     label: "1단계",
     timeLimit: 30,
     winScore: 100,
+    startLife: 3,
     itemCreateInterval: 900,
-    extraItemChance: 0
+    extraItemChance: 0,
+    isInfinite: false
   },
   2: {
+    key: "2",
     level: 2,
     label: "2단계",
     timeLimit: 30,
     winScore: 200,
+    startLife: 3,
     itemCreateInterval: 900,
-    extraItemChance: 0
+    extraItemChance: 0,
+    isInfinite: false
   },
   3: {
+    key: "3",
     level: 3,
     label: "3단계",
     timeLimit: 30,
     winScore: 300,
+    startLife: 3,
     itemCreateInterval: 520,
-    extraItemChance: 0.55
+    extraItemChance: 0.55,
+    isInfinite: false
+  },
+  infinite: {
+    key: "infinite",
+    level: "∞",
+    label: "무한모드",
+    timeLimit: null,
+    winScore: null,
+    startLife: 3,
+    itemCreateInterval: 900,
+    minItemCreateInterval: 320,
+    extraItemChance: 0,
+    maxExtraItemChance: 0.65,
+    itemFrequencyGrowthPerSecond: 0.016,
+    extraItemChanceGrowthPerSecond: 0.006,
+    isInfinite: true,
+    speedGrowthPerSecond: 0.012,
+    maxSpeedScale: 2.6
   }
 };
 
 function getCurrentDifficulty() {
-  return difficultySettings[currentDifficultyLevel] || difficultySettings[2];
+  return difficultySettings[String(currentDifficultyLevel)] || difficultySettings[2];
+}
+
+function isInfiniteMode() {
+  return Boolean(getCurrentDifficulty().isInfinite);
 }
 
 function getGameTimeLimit() {
@@ -77,6 +107,65 @@ function getWinScore() {
   return getCurrentDifficulty().winScore;
 }
 
+function getStartLife() {
+  return getCurrentDifficulty().startLife || 3;
+}
+
+function getElapsedSeconds() {
+  if (!gameStartTime) return 0;
+
+  return Math.floor((Date.now() - gameStartTime) / 1000);
+}
+
+function getCurrentSpeedScale() {
+  const difficulty = getCurrentDifficulty();
+
+  if (!difficulty.isInfinite || !gameRunning || !gameStartTime) {
+    return 1;
+  }
+
+  const elapsedSeconds = (Date.now() - gameStartTime) / 1000;
+  const speedScale = 1 + elapsedSeconds * difficulty.speedGrowthPerSecond;
+
+  return Math.min(difficulty.maxSpeedScale, speedScale);
+}
+
+function getCurrentItemCreateInterval() {
+  const difficulty = getCurrentDifficulty();
+
+  if (!difficulty.isInfinite || !gameRunning || !gameStartTime) {
+    return difficulty.itemCreateInterval;
+  }
+
+  const elapsedSeconds = (Date.now() - gameStartTime) / 1000;
+  const frequencyScale = 1 + elapsedSeconds * difficulty.itemFrequencyGrowthPerSecond;
+  const nextInterval = difficulty.itemCreateInterval / frequencyScale;
+
+  return Math.max(difficulty.minItemCreateInterval, Math.floor(nextInterval));
+}
+
+function getCurrentExtraItemChance() {
+  const difficulty = getCurrentDifficulty();
+
+  if (!difficulty.isInfinite || !gameRunning || !gameStartTime) {
+    return difficulty.extraItemChance;
+  }
+
+  const elapsedSeconds = (Date.now() - gameStartTime) / 1000;
+  const nextChance = difficulty.extraItemChance + elapsedSeconds * difficulty.extraItemChanceGrowthPerSecond;
+
+  return Math.min(difficulty.maxExtraItemChance, nextChance);
+}
+
+function scheduleNextItemWave() {
+  if (!gameRunning) return;
+
+  itemCreateTimer = setTimeout(() => {
+    createItemWave();
+    scheduleNextItemWave();
+  }, getCurrentItemCreateInterval());
+}
+
 function updateDifficultyDisplay() {
   const difficulty = getCurrentDifficulty();
 
@@ -85,19 +174,25 @@ function updateDifficultyDisplay() {
   }
 
   if (clearNote) {
-    clearNote.textContent = `${difficulty.label}: ${difficulty.timeLimit}초 안에 ${difficulty.winScore}점 이상을 넘기면 CLEAR!`;
+    if (difficulty.isInfinite) {
+      clearNote.textContent = "무한모드: 목표 점수 없이 계속 플레이! 시간이 지날수록 속도와 등장 빈도가 증가합니다!";
+    } else {
+      clearNote.textContent = `${difficulty.label}: ${difficulty.timeLimit}초 안에 ${difficulty.winScore}점 이상을 넘기면 CLEAR!`;
+    }
   }
 
   difficultyButtons.forEach(button => {
-    const isActive = Number(button.dataset.level) === difficulty.level;
+    const isActive = String(button.dataset.level) === String(difficulty.key);
     button.classList.toggle("active", isActive);
   });
 }
 
 function selectDifficulty(level) {
-  if (!difficultySettings[level]) return;
+  const nextLevel = String(level);
 
-  currentDifficultyLevel = level;
+  if (!difficultySettings[nextLevel]) return;
+
+  currentDifficultyLevel = nextLevel;
   gameRunning = false;
 
   clearGameTimers();
@@ -334,7 +429,7 @@ if (soundToggleBtn) {
 }
 difficultyButtons.forEach(button => {
   button.addEventListener("click", () => {
-    selectDifficulty(Number(button.dataset.level));
+    selectDifficulty(button.dataset.level);
   });
 });
 
@@ -721,11 +816,11 @@ function createItem() {
 function createItemWave() {
   if (!gameRunning) return;
 
-  const difficulty = getCurrentDifficulty();
+  const extraItemChance = getCurrentExtraItemChance();
 
   createItem();
 
-  if (difficulty.extraItemChance > 0 && Math.random() < difficulty.extraItemChance) {
+  if (extraItemChance > 0 && Math.random() < extraItemChance) {
     createItem();
   }
 }
@@ -757,7 +852,15 @@ function catchItem(item, index) {
   removeItemAt(index);
 
   if (life <= 0) {
-    endGame("game-over", "운석에 맞아 목숨을 모두 잃었습니다.", 180);
+    const gameOverMessage = isInfiniteMode()
+      ? `무한모드 종료! 최종 점수는 ${score}점입니다.`
+      : "운석에 맞아 목숨을 모두 잃었습니다.";
+
+    endGame("game-over", gameOverMessage, 180);
+    return;
+  }
+
+  if (isInfiniteMode()) {
     return;
   }
 
@@ -783,7 +886,7 @@ function updateTimerDisplay() {
 
 function updateGoalDisplay() {
   if (goalText) {
-    goalText.textContent = getWinScore();
+    goalText.textContent = isInfiniteMode() ? "∞" : getWinScore();
   }
 
   updateDifficultyDisplay();
@@ -792,7 +895,17 @@ function updateGoalDisplay() {
 function updateGameTimer() {
   if (!gameRunning) return;
 
-  const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+  const elapsedSeconds = getElapsedSeconds();
+
+  if (isInfiniteMode()) {
+    if (elapsedSeconds !== timeLeft) {
+      timeLeft = elapsedSeconds;
+      updateTimerDisplay();
+    }
+
+    return;
+  }
+
   const nextTimeLeft = Math.max(0, getGameTimeLimit() - elapsedSeconds);
 
   if (nextTimeLeft !== timeLeft) {
@@ -823,7 +936,7 @@ function gameLoop() {
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
 
-    item.y += item.speed;
+    item.y += item.speed * getCurrentSpeedScale();
     item.element.style.top = item.y + "px";
 
     const playerWidth = getPlayerWidth();
@@ -876,7 +989,7 @@ function resizeGameHandler() {
 
 function clearGameTimers() {
   if (itemCreateTimer) {
-    clearInterval(itemCreateTimer);
+    clearTimeout(itemCreateTimer);
     itemCreateTimer = null;
   }
 
@@ -893,8 +1006,8 @@ function clearGameTimers() {
 
 function resetGameState() {
   score = 0;
-  life = 3;
-  timeLeft = getGameTimeLimit();
+  life = getStartLife();
+  timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
   gameStartTime = 0;
   playerX = getCenteredPlayerX();
 
@@ -965,7 +1078,7 @@ function startGame() {
   if (gameRunning) return;
 
   gameRunning = true;
-  timeLeft = getGameTimeLimit();
+  timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
   gameStartTime = Date.now();
   updateTimerDisplay();
   updateGoalDisplay();
@@ -989,8 +1102,8 @@ function startGame() {
   }
 
   createItemWave();
+  scheduleNextItemWave();
 
-  itemCreateTimer = setInterval(createItemWave, getCurrentDifficulty().itemCreateInterval);
   gameLoopTimer = setInterval(gameLoop, 20);
 }
 
