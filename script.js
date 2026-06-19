@@ -14,6 +14,14 @@ const ground = document.querySelector(".ground");
 const resultPopup = document.getElementById("resultPopup");
 const resultTitle = document.getElementById("resultTitle");
 const resultMessage = document.getElementById("resultMessage");
+const rankingBtn = document.getElementById("rankingBtn");
+const rankingPopup = document.getElementById("rankingPopup");
+const rankingList = document.getElementById("rankingList");
+const closeRankingBtn = document.getElementById("closeRankingBtn");
+const rankingSaveArea = document.getElementById("rankingSaveArea");
+const rankingNicknameInput = document.getElementById("rankingNicknameInput");
+const saveRankingBtn = document.getElementById("saveRankingBtn");
+const rankingSaveMessage = document.getElementById("rankingSaveMessage");
 
 let score = 0;
 let life = 3;
@@ -32,6 +40,8 @@ let items = [];
 let itemCreateTimer = null;
 let gameLoopTimer = null;
 let resultPopupTimer = null;
+let latestInfiniteGameOverScore = 0;
+let hasSavedCurrentRanking = false;
 
 const playerBottom = 49;
 const itemSize = 44;
@@ -93,6 +103,7 @@ const difficultySettings = {
 
 const difficultyUnlockOrder = ["1", "2", "3", "infinite"];
 const UNLOCK_STORAGE_KEY = "starCloudMaxUnlockedStageIndex";
+const RANKING_STORAGE_KEY = "starCloudInfiniteRankingTop10";
 let maxUnlockedStageIndex = loadMaxUnlockedStageIndex();
 
 function loadMaxUnlockedStageIndex() {
@@ -114,6 +125,190 @@ function saveMaxUnlockedStageIndex() {
     localStorage.setItem(UNLOCK_STORAGE_KEY, String(maxUnlockedStageIndex));
   } catch (error) {
     console.warn("해금 진행도를 저장할 수 없습니다.", error);
+  }
+}
+
+function loadRankings() {
+  try {
+    const savedRankings = JSON.parse(localStorage.getItem(RANKING_STORAGE_KEY) || "[]");
+
+    if (!Array.isArray(savedRankings)) {
+      return [];
+    }
+
+    return savedRankings
+      .filter(record => record && typeof record.nickname === "string" && Number.isFinite(Number(record.score)))
+      .map(record => ({
+        nickname: record.nickname.slice(0, 10),
+        score: Number(record.score),
+        createdAt: Number(record.createdAt) || 0
+      }))
+      .sort((a, b) => b.score - a.score || b.createdAt - a.createdAt)
+      .slice(0, 10);
+  } catch (error) {
+    console.warn("랭킹을 불러올 수 없습니다.", error);
+    return [];
+  }
+}
+
+function saveRankings(rankings) {
+  try {
+    localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(rankings.slice(0, 10)));
+    return true;
+  } catch (error) {
+    console.warn("랭킹을 저장할 수 없습니다.", error);
+    return false;
+  }
+}
+
+function updateRankingButtonDisplay() {
+  if (!rankingBtn) return;
+
+  const shouldShowRankingButton = isInfiniteMode() && !gameRunning;
+  rankingBtn.classList.toggle("hidden", !shouldShowRankingButton);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderRankingList() {
+  if (!rankingList) return;
+
+  const rankings = loadRankings();
+
+  if (rankings.length === 0) {
+    rankingList.innerHTML = '<div class="ranking-empty">아직 저장된 랭킹이 없습니다.<br />무한모드에서 최고 점수에 도전해보세요!</div>';
+    return;
+  }
+
+  rankingList.innerHTML = rankings
+    .map((record, index) => {
+      const rank = index + 1;
+      const nickname = escapeHtml(record.nickname);
+      const scoreValue = Number(record.score).toLocaleString("ko-KR");
+
+      return `
+        <div class="ranking-row">
+          <span class="ranking-rank">#${rank}</span>
+          <span class="ranking-nickname">${nickname}</span>
+          <span class="ranking-score">${scoreValue}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function openRankingPopup() {
+  if (!rankingPopup) return;
+
+  renderRankingList();
+  rankingPopup.classList.remove("hidden");
+  rankingPopup.setAttribute("aria-hidden", "false");
+}
+
+function closeRankingPopup() {
+  if (!rankingPopup) return;
+
+  rankingPopup.classList.add("hidden");
+  rankingPopup.setAttribute("aria-hidden", "true");
+}
+
+function resetRankingSaveArea() {
+  if (!rankingSaveArea) return;
+
+  rankingSaveArea.classList.add("hidden");
+
+  if (rankingNicknameInput) {
+    rankingNicknameInput.value = "";
+    rankingNicknameInput.disabled = false;
+  }
+
+  if (saveRankingBtn) {
+    saveRankingBtn.disabled = false;
+    saveRankingBtn.textContent = "기록 저장";
+  }
+
+  if (rankingSaveMessage) {
+    rankingSaveMessage.textContent = "";
+  }
+}
+
+function showRankingSaveArea() {
+  if (!rankingSaveArea) return;
+
+  rankingSaveArea.classList.remove("hidden");
+  hasSavedCurrentRanking = false;
+
+  if (rankingNicknameInput) {
+    rankingNicknameInput.value = "";
+    rankingNicknameInput.disabled = false;
+    setTimeout(() => rankingNicknameInput.focus(), 80);
+  }
+
+  if (saveRankingBtn) {
+    saveRankingBtn.disabled = false;
+    saveRankingBtn.textContent = "기록 저장";
+  }
+
+  if (rankingSaveMessage) {
+    rankingSaveMessage.textContent = "닉네임을 입력하면 Top 10 랭킹에 저장됩니다.";
+  }
+}
+
+function saveCurrentInfiniteRanking() {
+  if (!isInfiniteMode() || hasSavedCurrentRanking || !rankingNicknameInput) return;
+
+  const nickname = rankingNicknameInput.value.trim().slice(0, 10);
+
+  if (!nickname) {
+    if (rankingSaveMessage) {
+      rankingSaveMessage.textContent = "닉네임을 1자 이상 입력해주세요.";
+    }
+
+    rankingNicknameInput.focus();
+    return;
+  }
+
+  const nextRecord = {
+    nickname,
+    score: latestInfiniteGameOverScore,
+    createdAt: Date.now()
+  };
+  const nextRankings = [...loadRankings(), nextRecord]
+    .sort((a, b) => b.score - a.score || b.createdAt - a.createdAt)
+    .slice(0, 10);
+  const saved = saveRankings(nextRankings);
+
+  if (!saved) {
+    if (rankingSaveMessage) {
+      rankingSaveMessage.textContent = "저장 공간 문제로 기록을 저장하지 못했습니다.";
+    }
+
+    return;
+  }
+
+  hasSavedCurrentRanking = true;
+  renderRankingList();
+
+  if (rankingNicknameInput) {
+    rankingNicknameInput.disabled = true;
+  }
+
+  if (saveRankingBtn) {
+    saveRankingBtn.disabled = true;
+    saveRankingBtn.textContent = "저장 완료";
+  }
+
+  if (rankingSaveMessage) {
+    const rankIndex = nextRankings.findIndex(record => record.createdAt === nextRecord.createdAt);
+    const rankText = rankIndex >= 0 ? `${rankIndex + 1}위로 ` : "Top 10 밖으로 ";
+    rankingSaveMessage.textContent = `${nickname}님의 ${latestInfiniteGameOverScore.toLocaleString("ko-KR")}점 기록이 ${rankText}저장되었습니다!`;
   }
 }
 
@@ -259,6 +454,8 @@ function updateDifficultyDisplay() {
     button.title = isUnlocked ? `${buttonDifficulty.label} 선택 가능` : "이전 단계를 먼저 클리어해야 합니다";
     button.textContent = isUnlocked ? buttonDifficulty.label : `${buttonDifficulty.label} 🔒`;
   });
+
+  updateRankingButtonDisplay();
 }
 
 function selectDifficulty(level) {
@@ -272,9 +469,11 @@ function selectDifficulty(level) {
   clearGameTimers();
   stopBgm();
   resetGameState();
+  closeRankingPopup();
 
   startBtn.style.display = "inline-block";
   restartBtn.style.display = "none";
+  updateRankingButtonDisplay();
 }
 
 function getGameWidth() {
@@ -500,6 +699,23 @@ startBtn.addEventListener("click", startGame);
 restartBtn.addEventListener("click", restartGame);
 if (soundToggleBtn) {
   soundToggleBtn.addEventListener("click", toggleSound);
+}
+if (rankingBtn) {
+  rankingBtn.addEventListener("click", openRankingPopup);
+}
+if (closeRankingBtn) {
+  closeRankingBtn.addEventListener("click", closeRankingPopup);
+}
+if (saveRankingBtn) {
+  saveRankingBtn.addEventListener("click", saveCurrentInfiniteRanking);
+}
+if (rankingNicknameInput) {
+  rankingNicknameInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      saveCurrentInfiniteRanking();
+    }
+  });
 }
 difficultyButtons.forEach(button => {
   button.addEventListener("click", () => {
@@ -1083,6 +1299,8 @@ function resetGameState() {
   life = getStartLife();
   timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
   gameStartTime = 0;
+  latestInfiniteGameOverScore = 0;
+  hasSavedCurrentRanking = false;
   playerX = getCenteredPlayerX();
 
   leftPressed = false;
@@ -1111,9 +1329,16 @@ function showResultPopup(resultType, message) {
   if (!resultPopup || !resultTitle || !resultMessage) return;
 
   const isClear = resultType === "clear";
+  const shouldShowRankingSave = !isClear && isInfiniteMode();
 
   resultTitle.textContent = isClear ? "CLEAR" : "GAME OVER";
   resultMessage.textContent = message;
+
+  if (shouldShowRankingSave) {
+    showRankingSaveArea();
+  } else {
+    resetRankingSaveArea();
+  }
 
   resultPopup.classList.remove("hidden", "result-clear", "result-game-over");
   resultPopup.classList.add(isClear ? "result-clear" : "result-game-over");
@@ -1123,6 +1348,7 @@ function showResultPopup(resultType, message) {
 function hideResultPopup() {
   if (!resultPopup) return;
 
+  resetRankingSaveArea();
   resultPopup.classList.add("hidden");
   resultPopup.classList.remove("result-clear", "result-game-over");
   resultPopup.setAttribute("aria-hidden", "true");
@@ -1144,13 +1370,21 @@ function endGame(resultType, message, delay = 100) {
   leftPressed = false;
   rightPressed = false;
 
+  if (resultType === "game-over" && isInfiniteMode()) {
+    latestInfiniteGameOverScore = score;
+    hasSavedCurrentRanking = false;
+  }
+
   if (resultPopupTimer) {
     clearTimeout(resultPopupTimer);
   }
 
+  updateRankingButtonDisplay();
+
   resultPopupTimer = setTimeout(() => {
     showResultPopup(resultType, message);
     restartBtn.style.display = "inline-block";
+    updateRankingButtonDisplay();
     resultPopupTimer = null;
   }, delay);
 }
@@ -1167,6 +1401,8 @@ function startGame() {
   startBtn.style.display = "none";
   restartBtn.style.display = "none";
   hideResultPopup();
+  closeRankingPopup();
+  updateRankingButtonDisplay();
 
   clearGameTimers();
 

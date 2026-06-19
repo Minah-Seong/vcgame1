@@ -55,6 +55,25 @@
         <div class="result-card">
           <div id="resultTitle" class="result-title">CLEAR</div>
           <div id="resultMessage" class="result-message">시간 안에 100점을 모았습니다!</div>
+
+          <div id="rankingSaveArea" class="ranking-save-area hidden">
+            <label class="ranking-label" for="rankingNicknameInput">닉네임 입력</label>
+            <div class="ranking-save-row">
+              <input id="rankingNicknameInput" class="ranking-input" type="text" maxlength="10" placeholder="최대 10자" autocomplete="off" />
+              <button id="saveRankingBtn" class="ranking-action-btn" type="button">기록 저장</button>
+            </div>
+            <div id="rankingSaveMessage" class="ranking-save-message" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="rankingPopup" class="ranking-popup hidden" aria-hidden="true">
+        <div class="ranking-card">
+          <div class="ranking-header-row">
+            <div class="ranking-title">TOP 10 RANKING</div>
+            <button id="closeRankingBtn" class="ranking-close-btn" type="button" aria-label="랭킹 닫기">X</button>
+          </div>
+          <div id="rankingList" class="ranking-list"></div>
         </div>
       </div>
     </div>
@@ -69,6 +88,7 @@
     <div class="control-panel">
       <div class="main-buttons">
         <button id="startBtn">START</button>
+        <button id="rankingBtn" class="ranking-btn hidden" type="button">랭킹</button>
         <button id="restartBtn">RESTART</button>
       </div>
 
