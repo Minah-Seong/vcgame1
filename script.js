@@ -7,8 +7,11 @@ const restartBtn = document.getElementById("restartBtn");
 let score = 0;
 let life = 3;
 let playerX = 180;
-let playerSpeed = 24;
+let playerSpeed = 7;
 let gameRunning = true;
+
+let leftPressed = false;
+let rightPressed = false;
 
 let items = [];
 let itemCreateTimer = null;
@@ -19,17 +22,38 @@ const gameHeight = 600;
 const playerWidth = 60;
 const playerHeight = 60;
 
-document.addEventListener("keydown", movePlayer);
+document.addEventListener("keydown", keyDownHandler);
+document.addEventListener("keyup", keyUpHandler);
 restartBtn.addEventListener("click", restartGame);
 
-function movePlayer(event) {
-  if (!gameRunning) return;
-
+function keyDownHandler(event) {
   if (event.key === "ArrowLeft") {
-    playerX -= playerSpeed;
+    leftPressed = true;
   }
 
   if (event.key === "ArrowRight") {
+    rightPressed = true;
+  }
+}
+
+function keyUpHandler(event) {
+  if (event.key === "ArrowLeft") {
+    leftPressed = false;
+  }
+
+  if (event.key === "ArrowRight") {
+    rightPressed = false;
+  }
+}
+
+function movePlayer() {
+  if (!gameRunning) return;
+
+  if (leftPressed) {
+    playerX -= playerSpeed;
+  }
+
+  if (rightPressed) {
     playerX += playerSpeed;
   }
 
@@ -67,6 +91,8 @@ function createItem() {
 
 function gameLoop() {
   if (!gameRunning) return;
+
+  movePlayer();
 
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
@@ -111,6 +137,9 @@ function endGame(message) {
   clearInterval(itemCreateTimer);
   clearInterval(gameLoopTimer);
 
+  leftPressed = false;
+  rightPressed = false;
+
   setTimeout(() => {
     alert(message);
     restartBtn.style.display = "inline-block";
@@ -122,6 +151,9 @@ function restartGame() {
   life = 3;
   playerX = 180;
   gameRunning = true;
+
+  leftPressed = false;
+  rightPressed = false;
 
   scoreText.textContent = score;
   lifeText.textContent = life;
