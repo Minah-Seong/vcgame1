@@ -15,7 +15,7 @@ body {
 }
 
 .game-wrap {
-  width: min(96vw, 720px);
+  width: min(96vw, 860px);
   padding: 14px;
   background: #32394f;
   border: 6px solid #111827;
@@ -55,7 +55,7 @@ body {
 
 #gameArea {
   position: relative;
-  width: min(100%, 660px);
+  width: min(100%, 800px);
   height: min(72vh, 600px);
   min-height: 560px;
   margin: 0 auto;
@@ -995,7 +995,7 @@ body {
 
 /* 시작 / 재시작 / 난이도 버튼 */
 .control-panel {
-  width: min(100%, 660px);
+  width: min(100%, 800px);
   margin: 14px auto 0;
   display: flex;
   justify-content: space-between;
@@ -1016,11 +1016,11 @@ body {
 
 .difficulty-panel {
   justify-content: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .infinite-mode-btn {
-  min-width: 92px;
+  min-width: 112px;
   white-space: nowrap;
 }
 
@@ -1040,7 +1040,9 @@ body {
 }
 
 .difficulty-btn {
-  padding: 10px 14px;
+  padding: 10px 16px;
+  min-width: 88px;
+  white-space: nowrap;
   background: #101833;
   color: #8ee9ff;
   border-width: 4px;
@@ -1069,9 +1071,9 @@ body {
 }
 
 #rankingBtn {
-  min-width: 148px;
-  padding-left: 16px;
-  padding-right: 16px;
+  min-width: 164px;
+  padding-left: 14px;
+  padding-right: 14px;
   background: #ff7cf7;
   color: #ffffff;
   white-space: nowrap;
@@ -1142,6 +1144,10 @@ body {
   .main-buttons,
   .difficulty-panel {
     justify-content: center;
+  }
+
+  .difficulty-panel {
+    flex-wrap: wrap;
   }
 
   #rankingBtn {
