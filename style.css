@@ -559,6 +559,64 @@ body {
 }
 
 
+/* 일시정지 팝업 */
+.pause-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 58;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: rgba(5, 11, 47, 0.54);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.pause-popup.hidden {
+  display: none;
+}
+
+.pause-card {
+  min-width: min(82%, 380px);
+  padding: 26px 22px 22px;
+  background: #101833;
+  border: 6px solid #0a0d16;
+  box-shadow:
+    0 0 0 5px #8ee9ff,
+    8px 8px 0 #000;
+  text-align: center;
+  animation: resultPopupIn 0.35s steps(5) forwards;
+}
+
+.pause-title {
+  margin-bottom: 12px;
+  color: #8ee9ff;
+  font-size: clamp(40px, 8vw, 66px);
+  font-weight: bold;
+  letter-spacing: 4px;
+  line-height: 1;
+  text-shadow:
+    4px 0 0 #000,
+    -4px 0 0 #000,
+    0 4px 0 #000,
+    0 -4px 0 #000,
+    6px 6px 0 #3553b8,
+    0 0 18px rgba(142, 233, 255, 0.85);
+}
+
+.pause-message {
+  color: #ffffff;
+  font-size: clamp(14px, 3vw, 18px);
+  font-weight: bold;
+  line-height: 1.5;
+  text-shadow:
+    2px 0 0 #000,
+    -2px 0 0 #000,
+    0 2px 0 #000,
+    0 -2px 0 #000;
+}
+
 /* 승리 / 패배 결과 팝업 */
 .result-popup {
   position: absolute;
@@ -1025,6 +1083,7 @@ body {
 }
 
 #startBtn,
+#pauseBtn,
 #rankingBtn,
 #restartBtn,
 .difficulty-btn {
@@ -1070,6 +1129,18 @@ body {
   display: inline-block;
 }
 
+#pauseBtn {
+  display: none;
+  min-width: 126px;
+  background: #8ee9ff;
+  color: #0a0d16;
+}
+
+#pauseBtn.paused {
+  background: #fff36a;
+  color: #0a0d16;
+}
+
 #rankingBtn {
   min-width: 164px;
   padding-left: 14px;
@@ -1088,6 +1159,7 @@ body {
 }
 
 #startBtn:hover,
+#pauseBtn:hover,
 #rankingBtn:hover,
 #restartBtn:hover,
 .difficulty-btn:not(:disabled):hover {
@@ -1097,6 +1169,7 @@ body {
 }
 
 #startBtn:active,
+#pauseBtn:active,
 #rankingBtn:active,
 #restartBtn:active,
 .difficulty-btn:not(:disabled):active {

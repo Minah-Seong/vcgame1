@@ -5,6 +5,7 @@ const timerText = document.getElementById("timer");
 const goalText = document.getElementById("goal");
 const lifeText = document.getElementById("life");
 const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
 const restartBtn = document.getElementById("restartBtn");
 const soundToggleBtn = document.getElementById("soundToggleBtn");
 const difficultyText = document.getElementById("difficulty");
@@ -12,6 +13,7 @@ const clearNote = document.getElementById("clearNote");
 const difficultyButtons = document.querySelectorAll(".difficulty-btn");
 const ground = document.querySelector(".ground");
 const resultPopup = document.getElementById("resultPopup");
+const pausePopup = document.getElementById("pausePopup");
 const resultTitle = document.getElementById("resultTitle");
 const resultMessage = document.getElementById("resultMessage");
 const rankingBtn = document.getElementById("rankingBtn");
@@ -28,6 +30,8 @@ let life = 3;
 let playerX = 0;
 let playerSpeed = 10;
 let gameRunning = false;
+let gamePaused = false;
+let pauseStartTime = 0;
 let timeLeft = 30;
 let gameStartTime = 0;
 let currentDifficultyLevel = 1;
@@ -440,10 +444,13 @@ function selectDifficulty(level) {
 
   currentDifficultyLevel = nextLevel;
   gameRunning = false;
+  gamePaused = false;
+  pauseStartTime = 0;
 
   clearGameTimers();
   stopBgm();
   resetGameState();
+  resetPauseControl();
 
   startBtn.style.display = "inline-block";
   restartBtn.style.display = "none";
@@ -669,6 +676,9 @@ document.addEventListener("keyup", keyUpHandler);
 window.addEventListener("resize", resizeGameHandler);
 
 startBtn.addEventListener("click", startGame);
+if (pauseBtn) {
+  pauseBtn.addEventListener("click", togglePause);
+}
 restartBtn.addEventListener("click", restartGame);
 if (rankingBtn) {
   rankingBtn.addEventListener("click", showRankingPopup);
@@ -727,7 +737,7 @@ function applySoundState() {
     return;
   }
 
-  if (gameRunning) {
+  if (gameRunning && !gamePaused) {
     resumeAudio()
       .then(() => {
         startBgm();
@@ -1280,6 +1290,8 @@ function resetGameState() {
   hasSavedCurrentRanking = false;
   timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
   gameStartTime = 0;
+  gamePaused = false;
+  pauseStartTime = 0;
   playerX = getCenteredPlayerX();
 
   leftPressed = false;
@@ -1290,6 +1302,7 @@ function resetGameState() {
   updateGoalDisplay();
   updateLife();
   hideResultPopup();
+  hidePausePopup();
   hideRankingSaveArea();
   hideRankingPopup();
 
@@ -1334,6 +1347,101 @@ function hideResultPopup() {
   hideRankingSaveArea();
 }
 
+function showPausePopup() {
+  if (!pausePopup) return;
+
+  pausePopup.classList.remove("hidden");
+  pausePopup.setAttribute("aria-hidden", "false");
+}
+
+function hidePausePopup() {
+  if (!pausePopup) return;
+
+  pausePopup.classList.add("hidden");
+  pausePopup.setAttribute("aria-hidden", "true");
+}
+
+function resetPauseControl() {
+  gamePaused = false;
+  pauseStartTime = 0;
+  hidePausePopup();
+
+  if (!pauseBtn) return;
+
+  pauseBtn.textContent = "PAUSE";
+  pauseBtn.classList.remove("paused");
+  pauseBtn.style.display = "none";
+}
+
+function pauseGame() {
+  if (!gameRunning || gamePaused) return;
+
+  gameRunning = false;
+  gamePaused = true;
+  pauseStartTime = Date.now();
+
+  clearGameTimers();
+  stopBgm();
+
+  leftPressed = false;
+  rightPressed = false;
+
+  if (pauseBtn) {
+    pauseBtn.textContent = "RESUME";
+    pauseBtn.classList.add("paused");
+    pauseBtn.style.display = "inline-block";
+  }
+
+  showPausePopup();
+}
+
+function resumeGame() {
+  if (!gamePaused) return;
+
+  const pausedDuration = pauseStartTime ? Date.now() - pauseStartTime : 0;
+
+  gameRunning = true;
+  gamePaused = false;
+  pauseStartTime = 0;
+  gameStartTime += pausedDuration;
+
+  leftPressed = false;
+  rightPressed = false;
+
+  hidePausePopup();
+
+  if (pauseBtn) {
+    pauseBtn.textContent = "PAUSE";
+    pauseBtn.classList.remove("paused");
+    pauseBtn.style.display = "inline-block";
+  }
+
+  clearGameTimers();
+  updateTimerDisplay();
+  updateGoalDisplay();
+  scheduleNextItemWave();
+  gameLoopTimer = setInterval(gameLoop, 20);
+
+  if (soundEnabled) {
+    resumeAudio()
+      .then(() => {
+        startBgm();
+      })
+      .catch(error => {
+        console.warn("오디오를 다시 시작할 수 없습니다.", error);
+      });
+  }
+}
+
+function togglePause() {
+  if (gamePaused) {
+    resumeGame();
+    return;
+  }
+
+  pauseGame();
+}
+
 function endGame(resultType, message, delay = 100) {
   const clearedLevel = String(currentDifficultyLevel);
 
@@ -1343,9 +1451,12 @@ function endGame(resultType, message, delay = 100) {
   }
 
   gameRunning = false;
+  gamePaused = false;
+  pauseStartTime = 0;
 
   clearGameTimers();
   stopBgm();
+  resetPauseControl();
 
   leftPressed = false;
   rightPressed = false;
@@ -1365,14 +1476,22 @@ function startGame() {
   if (gameRunning || !isDifficultyUnlocked(currentDifficultyLevel)) return;
 
   gameRunning = true;
+  gamePaused = false;
+  pauseStartTime = 0;
   timeLeft = isInfiniteMode() ? 0 : getGameTimeLimit();
   gameStartTime = Date.now();
   updateTimerDisplay();
   updateGoalDisplay();
 
   startBtn.style.display = "none";
+  if (pauseBtn) {
+    pauseBtn.textContent = "PAUSE";
+    pauseBtn.classList.remove("paused");
+    pauseBtn.style.display = "inline-block";
+  }
   restartBtn.style.display = "none";
   hideResultPopup();
+  hidePausePopup();
   hideRankingPopup();
 
   clearGameTimers();
@@ -1401,5 +1520,6 @@ function restartGame() {
   clearGameTimers();
   stopBgm();
   resetGameState();
+  resetPauseControl();
   startGame();
 }

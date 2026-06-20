@@ -67,6 +67,13 @@
         </div>
       </div>
 
+      <div id="pausePopup" class="pause-popup hidden" aria-hidden="true">
+        <div class="pause-card">
+          <div class="pause-title">PAUSED</div>
+          <div class="pause-message">일시정지 중입니다.<br />RESUME 버튼을 다시 누르면 계속 진행됩니다.</div>
+        </div>
+      </div>
+
       <div id="rankingPopup" class="ranking-popup hidden" aria-hidden="true">
         <div class="ranking-card">
           <div class="ranking-header-row">
@@ -87,6 +94,7 @@
     <div class="control-panel">
       <div class="main-buttons">
         <button id="startBtn">START</button>
+        <button id="pauseBtn" type="button">PAUSE</button>
         <button id="rankingBtn" class="ranking-btn" type="button">무한모드 랭킹</button>
         <button id="restartBtn">RESTART</button>
       </div>
