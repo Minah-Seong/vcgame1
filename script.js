@@ -24,6 +24,9 @@ const rankingSaveArea = document.getElementById("rankingSaveArea");
 const rankingNicknameInput = document.getElementById("rankingNicknameInput");
 const saveRankingBtn = document.getElementById("saveRankingBtn");
 const rankingSaveMessage = document.getElementById("rankingSaveMessage");
+const mobileLeftBtn = document.getElementById("mobileLeftBtn");
+const mobileRightBtn = document.getElementById("mobileRightBtn");
+const guideText = document.querySelector(".guide");
 
 let score = 0;
 let life = 3;
@@ -46,10 +49,71 @@ let itemCreateTimer = null;
 let gameLoopTimer = null;
 let resultPopupTimer = null;
 
-const playerBottom = 49;
+const defaultPlayerBottom = 49;
 const itemSize = 44;
 const yellowStarBaseSpeedMin = 3.6;
 const yellowStarBaseSpeedRange = 2.2;
+
+const ASSET_PATHS = {
+  yellowStar: "images/star-yellow.png",
+  redStar: "images/star-red.png",
+  rainbowStar: "images/star-rainbow.png",
+  meteor: "images/meteor.png"
+};
+
+const itemTypes = [
+  {
+    id: "yellow",
+    itemClass: "item-yellow",
+    imageSrc: ASSET_PATHS.yellowStar,
+    scoreValue: 10,
+    chance: 40,
+    speedMultiplier: 1,
+    loseLifeOnGround: false,
+    burstType: "yellow",
+    isObstacle: false
+  },
+  {
+    id: "red",
+    itemClass: "item-red",
+    imageSrc: ASSET_PATHS.redStar,
+    scoreValue: 20,
+    chance: 20,
+    speedMultiplier: 1.875,
+    loseLifeOnGround: false,
+    burstType: "red",
+    isObstacle: false
+  },
+  {
+    id: "rainbow",
+    itemClass: "item-rainbow",
+    imageSrc: ASSET_PATHS.rainbowStar,
+    scoreValue: 50,
+    chance: 10,
+    speedMultiplier: 2.325,
+    loseLifeOnGround: false,
+    burstType: "rainbow",
+    isObstacle: false
+  },
+  {
+    id: "meteor",
+    itemClass: "item-meteor",
+    imageSrc: ASSET_PATHS.meteor,
+    scoreValue: -50,
+    chance: 30,
+    speedMultiplier: 1,
+    loseLifeOnGround: false,
+    burstType: "meteor",
+    isObstacle: true
+  }
+];
+
+const burstPalettes = {
+  yellow: ["#ffd91f", "#fff36a", "#ffffff", "#ffae00", "#ffd91f", "#fff36a", "#ffae00", "#ffffff"],
+  red: ["#ff4d5d", "#ff9aa5", "#ffffff", "#ff2144", "#c9002b", "#ff9aa5", "#ff4d5d", "#ffffff"],
+  rainbow: ["#7dfcff", "#ff7cf7", "#fff2a8", "#8affc1", "#9f8cff", "#ffffff", "#67e8ff", "#ff9af8"],
+  meteor: ["#ff3d2e", "#ffae00", "#ffe66b", "#8a7d73", "#5e5655", "#302b31", "#ff6b35", "#c6b8a9"]
+};
 
 const difficultySettings = {
   1: {
@@ -477,6 +541,12 @@ function getPlayerHeight() {
   return player.offsetHeight || 60;
 }
 
+function getPlayerBottom() {
+  const bottomValue = parseFloat(window.getComputedStyle(player).bottom);
+
+  return Number.isFinite(bottomValue) ? bottomValue : defaultPlayerBottom;
+}
+
 function getCenteredPlayerX() {
   return Math.floor((getGameWidth() - getPlayerWidth()) / 2);
 }
@@ -495,185 +565,55 @@ function clampPlayerPosition() {
   player.style.left = playerX + "px";
 }
 
-const colors = {
-  B: "#13001f",
-  Y: "#ffd91f",
-  L: "#fff36a",
-  O: "#ffae00",
-  W: "#ffffff",
-  C: "#cfffff",
-  A: "#9ff1ff",
-  D: "#6ddcff",
-  S: "#d9faff",
-  G: "#72c9e8",
-  K: "#1e1b22",
-  M: "#5e5655",
-  N: "#8a7d73",
-  H: "#b8ada1",
-  E: "#302b31",
-  R: "#ff3d2e",
-  T: "transparent"
-};
-
-const starMap = [
-  "TTTTTBTTTTT",
-  "TTTTLBLTTTT",
-  "TTTTLYLTTTT",
-  "TTTBLYLBTTT",
-  "BBLYYYYOLBB",
-  "TBBLYYYOBBT",
-  "TTBLYYYOBTT",
-  "TTBYOYOBTTT",
-  "TBYOBOYBTTT",
-  "BYOBTBOYBTT",
-  "BBTTTTTBBTT"
-];
-
-const meteorMap = [
-  "TTTTTTOORRT",
-  "TTTTTOORRRT",
-  "TTTTOORRTTT",
-  "TTTKKKKTTTT",
-  "TTKNNNKTTTT",
-  "TKNNHNNKTTT",
-  "TKNNEHNKKTT",
-  "TKNNNNNNKTT",
-  "TTKNEHNKTTT",
-  "TTTKNNKTTTT",
-  "TTTTKKTTTTT"
-];
-
-const starPalettes = {
-  yellow: {
-    B: "#13001f",
-    Y: "#ffd91f",
-    L: "#fff36a",
-    O: "#ffae00"
-  },
-  red: {
-    B: "#2b0616",
-    Y: "#ff4d5d",
-    L: "#ff9aa5",
-    O: "#c9002b"
-  },
-  rainbow: {
-    B: "#160022",
-    Y: "#7dfcff",
-    L: "#fff2a8",
-    O: "#ff7cf7"
-  }
-};
-
-const itemTypes = [
-  {
-    id: "yellow",
-    itemClass: "item-yellow",
-    map: starMap,
-    artClass: "star-art star-art-yellow",
-    palette: starPalettes.yellow,
-    scoreValue: 10,
-    chance: 40,
-    speedMultiplier: 1,
-    loseLifeOnGround: false,
-    burstType: "yellow",
-    isObstacle: false
-  },
-  {
-    id: "red",
-    itemClass: "item-red",
-    map: starMap,
-    artClass: "star-art star-art-red",
-    palette: starPalettes.red,
-    scoreValue: 20,
-    chance: 20,
-    speedMultiplier: 1.875,
-    loseLifeOnGround: false,
-    burstType: "red",
-    isObstacle: false
-  },
-  {
-    id: "rainbow",
-    itemClass: "item-rainbow",
-    map: starMap,
-    artClass: "star-art star-art-rainbow",
-    palette: starPalettes.rainbow,
-    scoreValue: 50,
-    chance: 10,
-    speedMultiplier: 2.325,
-    loseLifeOnGround: false,
-    burstType: "rainbow",
-    isObstacle: false
-  },
-  {
-    id: "meteor",
-    itemClass: "item-meteor",
-    map: meteorMap,
-    artClass: "meteor-art",
-    palette: colors,
-    scoreValue: -50,
-    chance: 30,
-    speedMultiplier: 1,
-    loseLifeOnGround: false,
-    burstType: "meteor",
-    isObstacle: true
-  }
-];
-
-const burstPalettes = {
-  yellow: ["#ffd91f", "#fff36a", "#ffffff", "#ffae00", "#ffd91f", "#fff36a", "#ffae00", "#ffffff"],
-  red: ["#ff4d5d", "#ff9aa5", "#ffffff", "#ff2144", "#c9002b", "#ff9aa5", "#ff4d5d", "#ffffff"],
-  rainbow: ["#7dfcff", "#ff7cf7", "#fff2a8", "#8affc1", "#9f8cff", "#ffffff", "#67e8ff", "#ff9af8"],
-  meteor: ["#ff3d2e", "#ffae00", "#ffe66b", "#8a7d73", "#5e5655", "#302b31", "#ff6b35", "#c6b8a9"]
-};
-
-/*
-  구름 픽셀맵
-  모든 줄이 18칸으로 동일해야 깨지지 않음
-*/
-const cloudMap = [
-  "TTTTTTBBBBTTTTTTTT",
-  "TTTTBBWWWWBBTTTTTT",
-  "TTBBWWWWWWWWBBTTTT",
-  "TBBWWWWWWWWWWBBTTT",
-  "BBWWWWWWWWWWWWBBTT",
-  "BWWWWCWWWWCWWWWBBT",
-  "BBWWWAWWWWAWWWWBBT",
-  "TBBDAAAAWWAAAADBBT",
-  "TTBBDDAAAAAADBBTTT",
-  "TTTTBBBBBBBBBBTTTT"
-];
-
 /* =========================
-   8비트 BGM / 효과음 설정
+   MP3 BGM / 효과음 설정
    ========================= */
 
-let audioContext = null;
-let masterGain = null;
-let bgmGain = null;
-let sfxGain = null;
-let bgmTimer = null;
-let bgmStep = 0;
+const SOUND_PATHS = {
+  bgm: "sounds/bgm.mp3",
+  catch: "sounds/catch.mp3",
+  meteor: "sounds/meteor-hit.mp3",
+  burst: "sounds/burst.mp3",
+  unlock: "sounds/silent.mp3"
+};
 
-const MASTER_VOLUME = 0.22;
-const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const SOUND_VOLUMES = {
+  bgm: 0.34,
+  catch: 0.72,
+  meteor: 0.76,
+  burst: 0.68,
+  unlock: 0
+};
 
-const bgmMelody = [
-  659.25, 783.99, 987.77, 1174.66,
-  987.77, 783.99, 659.25, 523.25,
-  587.33, 698.46, 880.00, 1046.50,
-  880.00, 698.46, 587.33, 523.25
-];
+const SFX_POOL_SIZE = 4;
 
-const bgmBass = [
-  130.81,
-  164.81,
-  196.00,
-  220.00
-];
+let bgmAudio = null;
+let unlockAudio = null;
+let sfxAudioPools = {};
+let audioInitialized = false;
+let audioUnlocked = false;
+let pendingBgmStart = false;
+
+document.addEventListener("pointerdown", handleAudioUserGesture, { passive: true, capture: true });
+document.addEventListener("touchstart", handleAudioUserGesture, { passive: true, capture: true });
+document.addEventListener("click", handleAudioUserGesture, { passive: true, capture: true });
+document.addEventListener("keydown", handleAudioUserGesture, { capture: true });
 
 document.addEventListener("keydown", keyDownHandler);
 document.addEventListener("keyup", keyUpHandler);
 window.addEventListener("resize", resizeGameHandler);
+window.addEventListener("blur", releaseAllControls);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    releaseAllControls();
+    stopBgm(false);
+    return;
+  }
+
+  if (soundEnabled && gameRunning && !gamePaused) {
+    startBgm(false);
+  }
+});
 
 startBtn.addEventListener("click", startGame);
 if (pauseBtn) {
@@ -707,15 +647,68 @@ if (rankingPopup) {
 if (soundToggleBtn) {
   soundToggleBtn.addEventListener("click", toggleSound);
 }
+setupMobileControlButton(mobileLeftBtn, "left");
+setupMobileControlButton(mobileRightBtn, "right");
 difficultyButtons.forEach(button => {
   button.addEventListener("click", () => {
     selectDifficulty(button.dataset.level);
   });
 });
 
-createPixelArt(player, cloudMap, "cloud-art");
+initializeAudio();
+updateInputGuide();
 updateSoundButton();
 resetGameState();
+
+function createManagedAudio(src, volume = 1, loop = false) {
+  const audio = new Audio(src);
+
+  audio.preload = "auto";
+  audio.loop = loop;
+  audio.volume = soundEnabled ? volume : 0;
+  audio.setAttribute("playsinline", "");
+  audio.setAttribute("webkit-playsinline", "");
+
+  return audio;
+}
+
+function createSfxPool(src, volume) {
+  return Array.from({ length: SFX_POOL_SIZE }, () => createManagedAudio(src, volume, false));
+}
+
+function initializeAudio() {
+  if (audioInitialized) return;
+
+  bgmAudio = createManagedAudio(SOUND_PATHS.bgm, SOUND_VOLUMES.bgm, true);
+  unlockAudio = createManagedAudio(SOUND_PATHS.unlock, SOUND_VOLUMES.unlock, false);
+
+  sfxAudioPools = {
+    catch: createSfxPool(SOUND_PATHS.catch, SOUND_VOLUMES.catch),
+    meteor: createSfxPool(SOUND_PATHS.meteor, SOUND_VOLUMES.meteor),
+    burst: createSfxPool(SOUND_PATHS.burst, SOUND_VOLUMES.burst)
+  };
+
+  audioInitialized = true;
+  preloadSounds();
+}
+
+function preloadSounds() {
+  if (!audioInitialized) return;
+
+  const audioList = [
+    bgmAudio,
+    unlockAudio,
+    ...Object.values(sfxAudioPools).flat()
+  ].filter(Boolean);
+
+  audioList.forEach(audio => {
+    try {
+      audio.load();
+    } catch (error) {
+      console.warn("사운드 파일을 미리 불러올 수 없습니다.", error);
+    }
+  });
+}
 
 function updateSoundButton() {
   if (!soundToggleBtn) return;
@@ -725,26 +718,36 @@ function updateSoundButton() {
   soundToggleBtn.classList.toggle("muted", !soundEnabled);
 }
 
+function updateAudioVolumes() {
+  if (!audioInitialized) return;
+
+  if (bgmAudio) {
+    bgmAudio.volume = soundEnabled ? SOUND_VOLUMES.bgm : 0;
+  }
+
+  Object.entries(sfxAudioPools).forEach(([key, pool]) => {
+    const nextVolume = soundEnabled ? SOUND_VOLUMES[key] : 0;
+
+    pool.forEach(audio => {
+      audio.volume = nextVolume;
+    });
+  });
+}
+
 function applySoundState() {
   updateSoundButton();
-
-  if (masterGain) {
-    masterGain.gain.value = soundEnabled ? MASTER_VOLUME : 0;
-  }
+  initializeAudio();
+  updateAudioVolumes();
 
   if (!soundEnabled) {
     stopBgm();
     return;
   }
 
+  resumeAudio();
+
   if (gameRunning && !gamePaused) {
-    resumeAudio()
-      .then(() => {
-        startBgm();
-      })
-      .catch(error => {
-        console.warn("오디오를 다시 시작할 수 없습니다.", error);
-      });
+    startBgm(false);
   }
 }
 
@@ -753,204 +756,122 @@ function toggleSound() {
   applySoundState();
 }
 
-function initializeAudio() {
-  if (audioContext || !AudioContextClass) return;
+function handleAudioUserGesture() {
+  resumeAudio();
 
-  audioContext = new AudioContextClass();
-
-  masterGain = audioContext.createGain();
-  bgmGain = audioContext.createGain();
-  sfxGain = audioContext.createGain();
-
-  masterGain.gain.value = soundEnabled ? MASTER_VOLUME : 0;
-  bgmGain.gain.value = 0.36;
-  sfxGain.gain.value = 0.7;
-
-  bgmGain.connect(masterGain);
-  sfxGain.connect(masterGain);
-  masterGain.connect(audioContext.destination);
+  if (pendingBgmStart && soundEnabled && gameRunning && !gamePaused) {
+    startBgm(false);
+  }
 }
 
 function resumeAudio() {
   initializeAudio();
+  updateAudioVolumes();
 
-  if (!audioContext) {
-    return Promise.resolve();
-  }
+  if (!audioUnlocked && unlockAudio) {
+    audioUnlocked = true;
 
-  if (audioContext.state === "suspended") {
-    return audioContext.resume();
+    unlockAudio.currentTime = 0;
+
+    const unlockPromise = unlockAudio.play();
+
+    if (unlockPromise && typeof unlockPromise.catch === "function") {
+      unlockPromise
+        .then(() => {
+          unlockAudio.pause();
+          unlockAudio.currentTime = 0;
+        })
+        .catch(error => {
+          audioUnlocked = false;
+          console.warn("첫 입력에서 오디오를 활성화할 수 없습니다. 다음 입력에서 다시 시도합니다.", error);
+        });
+    }
   }
 
   return Promise.resolve();
 }
 
-function playTone(frequency, startTime, duration, type, volume, destinationGain) {
-  if (!soundEnabled || !audioContext || !destinationGain) return;
+function startBgm(restartTrack = true) {
+  if (!soundEnabled) return;
 
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
+  initializeAudio();
+  updateAudioVolumes();
 
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, startTime);
+  if (!bgmAudio) return;
 
-  gainNode.gain.setValueAtTime(0.0001, startTime);
-  gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.01);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-  oscillator.connect(gainNode);
-  gainNode.connect(destinationGain);
-
-  oscillator.start(startTime);
-  oscillator.stop(startTime + duration + 0.03);
-}
-
-function playNoise(startTime, duration, volume, destinationGain) {
-  if (!soundEnabled || !audioContext || !destinationGain) return;
-
-  const bufferSize = Math.floor(audioContext.sampleRate * duration);
-  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < bufferSize; i++) {
-    const fade = 1 - i / bufferSize;
-    data[i] = (Math.random() * 2 - 1) * fade;
+  if (restartTrack || bgmAudio.ended) {
+    bgmAudio.currentTime = 0;
   }
 
-  const source = audioContext.createBufferSource();
-  const filter = audioContext.createBiquadFilter();
-  const gainNode = audioContext.createGain();
+  pendingBgmStart = false;
 
-  filter.type = "highpass";
-  filter.frequency.setValueAtTime(1800, startTime);
+  const playPromise = bgmAudio.play();
 
-  gainNode.gain.setValueAtTime(volume, startTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-  source.buffer = buffer;
-
-  source.connect(filter);
-  filter.connect(gainNode);
-  gainNode.connect(destinationGain);
-
-  source.start(startTime);
-  source.stop(startTime + duration);
-}
-
-function playBgmTick() {
-  if (!soundEnabled || !audioContext || !bgmGain || !gameRunning) return;
-
-  const now = audioContext.currentTime;
-
-  const melodyFrequency = bgmMelody[bgmStep % bgmMelody.length];
-  playTone(melodyFrequency, now, 0.09, "square", 0.16, bgmGain);
-
-  if (bgmStep % 4 === 0) {
-    const bassIndex = Math.floor(bgmStep / 4) % bgmBass.length;
-    playTone(bgmBass[bassIndex], now, 0.16, "triangle", 0.1, bgmGain);
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(error => {
+      pendingBgmStart = true;
+      console.warn("BGM 재생이 브라우저에 의해 보류되었습니다. 화면을 한 번 더 터치하면 재생됩니다.", error);
+    });
   }
+}
 
-  if (bgmStep % 2 === 0) {
-    playNoise(now, 0.025, 0.025, bgmGain);
+function stopBgm(resetTrack = true) {
+  pendingBgmStart = false;
+
+  if (!bgmAudio) return;
+
+  bgmAudio.pause();
+
+  if (resetTrack) {
+    bgmAudio.currentTime = 0;
   }
-
-  bgmStep++;
 }
 
-function startBgm() {
-  if (!soundEnabled || !audioContext || !bgmGain) return;
+function getAvailableSfxAudio(type) {
+  initializeAudio();
 
-  stopBgm();
+  const pool = sfxAudioPools[type];
 
-  bgmStep = 0;
-  playBgmTick();
+  if (!pool || pool.length === 0) return null;
 
-  bgmTimer = setInterval(playBgmTick, 150);
+  return pool.find(audio => audio.paused || audio.ended) || pool[0];
 }
 
-function stopBgm() {
-  if (bgmTimer) {
-    clearInterval(bgmTimer);
-    bgmTimer = null;
+function playSfx(type) {
+  if (!soundEnabled) return;
+
+  const audio = getAvailableSfxAudio(type);
+
+  if (!audio) return;
+
+  audio.pause();
+  audio.currentTime = 0;
+  audio.volume = SOUND_VOLUMES[type] ?? 1;
+
+  const playPromise = audio.play();
+
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(error => {
+      console.warn(`${type} 효과음을 재생할 수 없습니다.`, error);
+    });
   }
 }
 
 function playCatchSound() {
-  if (!soundEnabled || !audioContext || !sfxGain) return;
-
-  const now = audioContext.currentTime;
-
-  playTone(987.77, now, 0.055, "square", 0.32, sfxGain);
-  playTone(1318.51, now + 0.045, 0.065, "square", 0.26, sfxGain);
-  playTone(1760.00, now + 0.1, 0.09, "triangle", 0.2, sfxGain);
-  playNoise(now, 0.045, 0.06, sfxGain);
+  playSfx("catch");
 }
 
 function playMeteorCatchSound() {
-  if (!soundEnabled || !audioContext || !sfxGain) return;
-
-  const now = audioContext.currentTime;
-
-  playTone(220.00, now, 0.08, "sawtooth", 0.18, sfxGain);
-  playTone(146.83, now + 0.04, 0.12, "square", 0.16, sfxGain);
-  playTone(98.00, now + 0.1, 0.14, "triangle", 0.14, sfxGain);
-  playNoise(now, 0.18, 0.16, sfxGain);
+  playSfx("meteor");
 }
 
 function playBurstSound() {
-  if (!soundEnabled || !audioContext || !sfxGain) return;
-
-  const now = audioContext.currentTime;
-
-  playTone(329.63, now, 0.08, "square", 0.22, sfxGain);
-  playTone(196.00, now + 0.045, 0.1, "triangle", 0.16, sfxGain);
-  playNoise(now, 0.11, 0.12, sfxGain);
+  playSfx("burst");
 }
 
 /* =========================
    픽셀아트 생성
    ========================= */
-
-function createPixelArt(target, map, className, palette = colors) {
-  target.innerHTML = "";
-
-  const art = createPixelArtElement(map, className, palette);
-  target.appendChild(art);
-}
-
-function createPixelArtElement(map, className, palette = colors) {
-  const width = map[0].length;
-  const height = map.length;
-
-  const hasInvalidRow = map.some(row => row.length !== width);
-
-  if (hasInvalidRow) {
-    console.error("픽셀맵의 가로 칸 수가 서로 다릅니다. 모든 줄의 글자 수를 동일하게 맞춰주세요.");
-  }
-
-  const art = document.createElement("div");
-  art.classList.add("pixel-art");
-
-  className.split(" ").forEach(name => {
-    if (name) {
-      art.classList.add(name);
-    }
-  });
-
-  art.style.gridTemplateColumns = `repeat(${width}, var(--pixel-size))`;
-  art.style.gridTemplateRows = `repeat(${height}, var(--pixel-size))`;
-
-  map.forEach(row => {
-    row.split("").forEach(code => {
-      const cell = document.createElement("div");
-      cell.classList.add("pixel-cell");
-      cell.style.backgroundColor = palette[code] || colors[code] || "transparent";
-      art.appendChild(cell);
-    });
-  });
-
-  return art;
-}
 
 function createBurstEffect(x, y, burstType = "yellow") {
   const burst = document.createElement("div");
@@ -1000,27 +921,95 @@ function clearBurstEffects() {
    입력 처리
    ========================= */
 
+function setMoveDirection(direction, isPressed) {
+  if (direction === "left") {
+    leftPressed = isPressed;
+
+    if (isPressed) {
+      rightPressed = false;
+      mobileRightBtn?.classList.remove("pressed");
+    }
+  }
+
+  if (direction === "right") {
+    rightPressed = isPressed;
+
+    if (isPressed) {
+      leftPressed = false;
+      mobileLeftBtn?.classList.remove("pressed");
+    }
+  }
+}
+
+function releaseAllControls() {
+  leftPressed = false;
+  rightPressed = false;
+
+  mobileLeftBtn?.classList.remove("pressed");
+  mobileRightBtn?.classList.remove("pressed");
+}
+
+function setupMobileControlButton(button, direction) {
+  if (!button) return;
+
+  const pressButton = event => {
+    event.preventDefault();
+    button.classList.add("pressed");
+    setMoveDirection(direction, true);
+
+    if (event.pointerId !== undefined && button.setPointerCapture) {
+      button.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const releaseButton = event => {
+    event.preventDefault();
+    button.classList.remove("pressed");
+    setMoveDirection(direction, false);
+
+    if (event.pointerId !== undefined && button.releasePointerCapture && button.hasPointerCapture(event.pointerId)) {
+      button.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  button.addEventListener("pointerdown", pressButton);
+  button.addEventListener("pointerup", releaseButton);
+  button.addEventListener("pointercancel", releaseButton);
+  button.addEventListener("pointerleave", releaseButton);
+  button.addEventListener("contextmenu", event => event.preventDefault());
+}
+
+function updateInputGuide() {
+  if (!guideText) return;
+
+  const shouldShowMobileGuide = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 760px)").matches;
+
+  guideText.textContent = shouldShowMobileGuide
+    ? "화면의 ◀ ▶ 버튼을 누르면 구름이 이동합니다"
+    : "← → 방향키 또는 화면의 ◀ ▶ 버튼으로 구름이 이동합니다";
+}
+
 function keyDownHandler(event) {
   if (event.key === "ArrowLeft") {
     event.preventDefault();
-    leftPressed = true;
+    setMoveDirection("left", true);
   }
 
   if (event.key === "ArrowRight") {
     event.preventDefault();
-    rightPressed = true;
+    setMoveDirection("right", true);
   }
 }
 
 function keyUpHandler(event) {
   if (event.key === "ArrowLeft") {
     event.preventDefault();
-    leftPressed = false;
+    setMoveDirection("left", false);
   }
 
   if (event.key === "ArrowRight") {
     event.preventDefault();
-    rightPressed = false;
+    setMoveDirection("right", false);
   }
 }
 
@@ -1067,10 +1056,14 @@ function createItem() {
   const light = document.createElement("div");
   light.classList.add("fall-light");
 
-  const itemArt = createPixelArtElement(itemType.map, itemType.artClass, itemType.palette);
+  const itemImage = document.createElement("img");
+  itemImage.classList.add("item-image");
+  itemImage.src = itemType.imageSrc;
+  itemImage.alt = "";
+  itemImage.draggable = false;
 
   item.appendChild(light);
-  item.appendChild(itemArt);
+  item.appendChild(itemImage);
 
   const maxItemX = Math.max(0, getGameWidth() - itemSize);
   const randomX = Math.floor(Math.random() * maxItemX);
@@ -1221,7 +1214,7 @@ function gameLoop() {
 
     const playerWidth = getPlayerWidth();
     const playerHeight = getPlayerHeight();
-    const playerY = getGameHeight() - playerBottom - playerHeight;
+    const playerY = getGameHeight() - getPlayerBottom() - playerHeight;
     const groundTop = getGroundTop();
 
     const isHit =
@@ -1255,6 +1248,7 @@ function updateLife() {
 }
 
 function resizeGameHandler() {
+  updateInputGuide();
   clampPlayerPosition();
 
   items.forEach(item => {
@@ -1294,8 +1288,7 @@ function resetGameState() {
   pauseStartTime = 0;
   playerX = getCenteredPlayerX();
 
-  leftPressed = false;
-  rightPressed = false;
+  releaseAllControls();
 
   scoreText.textContent = score;
   updateTimerDisplay();
@@ -1383,8 +1376,7 @@ function pauseGame() {
   clearGameTimers();
   stopBgm();
 
-  leftPressed = false;
-  rightPressed = false;
+  releaseAllControls();
 
   if (pauseBtn) {
     pauseBtn.textContent = "RESUME";
@@ -1405,8 +1397,7 @@ function resumeGame() {
   pauseStartTime = 0;
   gameStartTime += pausedDuration;
 
-  leftPressed = false;
-  rightPressed = false;
+  releaseAllControls();
 
   hidePausePopup();
 
@@ -1458,8 +1449,7 @@ function endGame(resultType, message, delay = 100) {
   stopBgm();
   resetPauseControl();
 
-  leftPressed = false;
-  rightPressed = false;
+  releaseAllControls();
 
   if (resultPopupTimer) {
     clearTimeout(resultPopupTimer);

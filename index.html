@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Star Cloud Catch</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preload" href="sounds/bgm.mp3" as="audio" type="audio/mpeg" />
+  <link rel="preload" href="sounds/catch.mp3" as="audio" type="audio/mpeg" />
+  <link rel="preload" href="sounds/meteor-hit.mp3" as="audio" type="audio/mpeg" />
+  <link rel="preload" href="sounds/burst.mp3" as="audio" type="audio/mpeg" />
 </head>
 <body>
   <div class="game-wrap">
@@ -24,32 +28,14 @@
 
       <button id="soundToggleBtn" class="sound-toggle-btn" type="button" aria-pressed="true">SOUND ON</button>
 
-      <div class="moon"></div>
-
-      <div class="stars-bg star-1"></div>
-      <div class="stars-bg star-2"></div>
-      <div class="stars-bg star-3"></div>
-      <div class="stars-bg star-4"></div>
-      <div class="stars-bg star-5"></div>
-      <div class="stars-bg star-6"></div>
-
-      <div class="cloud-bg cloud-left"></div>
-      <div class="cloud-bg cloud-right"></div>
-
-      <div class="mountain mountain-back"></div>
-      <div class="mountain mountain-front"></div>
-
-      <div class="forest">
-        <div class="tree tree-1"></div>
-        <div class="tree tree-2"></div>
-        <div class="tree tree-3"></div>
-        <div class="tree tree-4"></div>
-        <div class="tree tree-5"></div>
-      </div>
-
       <div class="ground"></div>
 
       <div id="player"></div>
+
+      <div id="mobileControls" class="mobile-controls" aria-label="모바일 이동 버튼">
+        <button id="mobileLeftBtn" class="mobile-control-btn mobile-left-btn" type="button" aria-label="왼쪽으로 이동">◀</button>
+        <button id="mobileRightBtn" class="mobile-control-btn mobile-right-btn" type="button" aria-label="오른쪽으로 이동">▶</button>
+      </div>
 
       <div id="resultPopup" class="result-popup hidden" aria-hidden="true">
         <div class="result-card">
@@ -85,7 +71,7 @@
       </div>
     </div>
 
-    <p class="guide">← → 방향키를 누르면 구름이 이동합니다</p>
+    <p class="guide">← → 방향키 또는 화면의 ◀ ▶ 버튼으로 구름이 이동합니다</p>
     <p id="clearNote" class="sound-note">1단계: 30초 안에 100점 이상을 넘기면 CLEAR!</p>
     <p class="sound-note">노란 별 +10 · 붉은 별 +20 · 무지개 별 +50 / 운석 -50 & 목숨 -1</p>
     <p class="sound-note">이전 단계를 클리어하면 다음 단계가 해금됩니다</p>
