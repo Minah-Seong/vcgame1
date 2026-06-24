@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Star Cloud Catch</title>
+  <title>Star Catch</title>
+  <meta name="theme-color" content="#101833" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preload" href="sounds/bgm.mp3" as="audio" type="audio/mpeg" />
   <link rel="preload" href="sounds/catch.mp3" as="audio" type="audio/mpeg" />
@@ -95,5 +99,16 @@
   </div>
 
   <script src="script.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js")
+          .catch(error => {
+            console.warn("서비스 워커 등록에 실패했습니다.", error);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
